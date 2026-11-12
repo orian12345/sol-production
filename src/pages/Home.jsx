@@ -74,7 +74,6 @@ export default function Home() {
             <p className="lead" style={{ fontSize: 20, maxWidth: 620 }}>יניר סול | SOL Production — כתיבה והקלטת שיר בר מצווה ובת מצווה, הקלטת קאברים וברכות לאירועים, חדר חזרות אקוסטי עם הקלטת ערוצים מלאה, והפקה מוזיקלית מקצה לקצה.</p>
             <div className="row">
               <a className="btn btn-main" href={WA_HELLO} target="_blank" rel="noopener"><IconWA />שריינו סשן בוואטסאפ</a>
-              <a className="btn btn-glass" href="/bar-mitzvah">שיר בר / בת מצווה</a>
             </div>
           </div>
           <div className="hero-viz"><StudioViz /></div>
