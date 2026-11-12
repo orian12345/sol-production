@@ -9,7 +9,6 @@ import { ALL_ITEMS, HOME_FAQ, SOCIAL, WA_HELLO, PHONE, TEL, HOURS, priceText } f
 const QUICK = [
   { label: 'חדר חזרות', pick: { id: 'reh-base' } },
   { label: 'הקלטת קאבר', pick: { id: 'cover-playback' } },
-  { label: 'שיר בר / בת מצווה', pick: { id: 'barmitzvah' } },
   { label: 'ברכה לאירוע', pick: { id: 'greeting' } },
   { label: 'הפקת סינגל', pick: { service: 'single' } },
   { label: 'מיקס ומאסטרינג', pick: { service: 'mix' } },
