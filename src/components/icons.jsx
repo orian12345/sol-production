@@ -27,3 +27,12 @@ export const IconYouTube = () => (
 export const IconFacebook = () => (
   <svg {...base} width="22" height="22" strokeWidth="1.9"><path d="M15 3h-2.5A3.5 3.5 0 0 0 9 6.5V10H6.5v3.5H9V21h3.5v-7.5H15l.5-3.5h-3V7a1 1 0 0 1 1-1H15z" /></svg>
 );
+export const IconNote = () => (
+  <svg {...base} width="28" height="28" strokeWidth="1.8" style={{ color: 'var(--violet-l)', flex: 'none' }}><path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" /></svg>
+);
+export const IconMic = () => (
+  <svg {...base} width="28" height="28" strokeWidth="1.8" style={{ color: 'var(--violet-l)', flex: 'none' }}><rect x="9" y="2" width="6" height="12" rx="3" /><path d="M5 10a7 7 0 0 0 14 0M12 17v5M8 22h8" /></svg>
+);
+export const IconPlay = () => (
+  <svg {...base} width="20" height="20" strokeWidth="2"><polygon points="6 4 20 12 6 20 6 4" /></svg>
+);

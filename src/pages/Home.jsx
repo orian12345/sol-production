@@ -3,7 +3,7 @@ import { Layout, Header, Footer, BookBar } from '../components/Layout.jsx';
 import { StudioViz, StudioVideo, Faq, Location } from '../components/Sections.jsx';
 import { Pricing } from '../components/Pricing.jsx';
 import { Booking } from '../components/Booking.jsx';
-import { IconWA, IconMixer, IconSpeaker, IconInstagram, IconTikTok, IconYouTube, IconFacebook } from '../components/icons.jsx';
+import { IconWA, IconMixer, IconSpeaker, IconNote, IconMic, IconPlay, IconInstagram, IconTikTok, IconYouTube, IconFacebook } from '../components/icons.jsx';
 import { ALL_ITEMS, HOME_FAQ, SOCIAL, WA_HELLO, PHONE, TEL, HOURS, priceText } from '../data.js';
 
 const QUICK = [
@@ -17,10 +17,13 @@ const QUICK = [
 
 const INITIAL = { service: 'rehearsal', band: '2–4 נגנים', rec: true, dur: '3', time: '19:00', selected: null, date: '', name: '', notes: '' };
 
+const WAVE = Array.from({ length: 48 }, (_, i) => 25 + ((i * 13 + 7) % 75));
+
 const yt = (q) => 'https://www.youtube.com/results?search_query=' + encodeURIComponent(q);
 
 export default function Home() {
   const [bk, setBk] = useState(INITIAL);
+  const [mode, setMode] = useState('studio');
 
   /* בחירה מהמחירון / מכפתורי הזמנה מהירה → ממלא את טופס ההזמנה */
   const pick = useCallback(({ id, service }) => {
@@ -43,7 +46,7 @@ export default function Home() {
       <Header
         topbar
         brandHref="#top"
-        links={[['#about', 'אודות'], ['/bar-mitzvah', 'שיר בר / בת מצווה'], ['#studio', 'האולפן וחדר החזרות'], ['#gear', 'ציוד'], ['#pricing', 'מחירון'], ['#faq', 'שאלות נפוצות']]}
+        links={[['#about', 'אודות'], ['#music', 'המוזיקה שלי'], ['/bar-mitzvah', 'שיר בר / בת מצווה'], ['#studio', 'האולפן וחדר החזרות'], ['#gear', 'ציוד'], ['#pricing', 'מחירון'], ['#faq', 'שאלות נפוצות']]}
         cta={{ href: '#booking', label: 'הזמנת חדר / אולפן' }}
         quick={QUICK}
         onPick={pick}
@@ -67,58 +70,81 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="wrap hero" aria-labelledby="hero-title">
+        <section id="home" className="wrap hero" aria-labelledby="hero-title">
           <div className="hero-txt">
-            <span className="chip">SOL Production · אולפן הקלטות וחדר חזרות · אור יהודה</span>
-            <h1 id="hero-title" className="d">אולפן הקלטות באור יהודה — <span className="grad">שיר בר מצווה, קאברים והפקה מוזיקלית</span></h1>
-            <p className="lead" style={{ fontSize: 20, maxWidth: 620 }}>יניר סול | SOL Production — כתיבה והקלטת שיר בר מצווה ובת מצווה, הקלטת קאברים וברכות לאירועים, חדר חזרות אקוסטי עם הקלטת ערוצים מלאה, והפקה מוזיקלית מקצה לקצה.</p>
+            <div role="group" aria-label="בחירת מיקוד" className="modes">
+              <button type="button" className="pill" aria-pressed={mode === 'artist'} onClick={() => setMode('artist')}>האמן והיוצר</button>
+              <button type="button" className="pill" aria-pressed={mode === 'studio'} onClick={() => setMode('studio')}>אולפן ההקלטות וחדר החזרות</button>
+            </div>
+            <h1 id="hero-title" className="d">יניר סול <span style={{ color: 'var(--violet-l)' }}>|</span> SOL Production — <span className="grad">אולפן הקלטות באור יהודה</span></h1>
+            <p className="lead" style={{ fontSize: 20, maxWidth: 620 }}>אולפן הקלטות מתקדם, חדר חזרות אקוסטי עם הקלטת ערוצים מלאה, והפקה מוזיקלית מקצה לקצה — כולל הקלטת קאברים, ברכות ושירי בר ובת מצווה.</p>
+            <div className="glass" style={{ padding: '18px 22px', display: 'flex', gap: 14, alignItems: 'center', maxWidth: 600 }}>
+              {mode === 'artist'
+                ? <><IconNote /><p style={{ margin: 0, fontSize: 16, lineHeight: 1.55 }}>זמר, כותב, מלחין ומפיק. שירים מקוריים והפקות שנולדות מהדף הריק.</p></>
+                : <><IconMic /><p style={{ margin: 0, fontSize: 16, lineHeight: 1.55 }}>חדר חזרות מטופל אקוסטית עם בקליין מלא, אולפן הקלטות עם תא שירה, וכל הערוצים מנותבים ישירות לחדר הבקרה.</p></>}
+            </div>
             <div className="row">
               <a className="btn btn-main" href={WA_HELLO} target="_blank" rel="noopener"><IconWA />שריינו סשן בוואטסאפ</a>
+              <a className="btn btn-glass" href="#music"><IconPlay />האזינו ליצירות שלי</a>
             </div>
-          </div>
-          <div className="hero-viz"><StudioViz /></div>
-        </section>
-
-        <section id="bar-mitzvah" className="wrap" aria-labelledby="bm-title" style={{ paddingBottom: 96, scrollMarginTop: 110 }}>
-          <div className="glass bm">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-              <span className="chip" style={{ background: 'var(--orange)', color: '#0b0b10' }}>הכי מבוקש</span>
-              <h2 id="bm-title" className="d">שיר בר מצווה ובת מצווה — נכתב, מוקלט ומופק במיוחד בשבילכם</h2>
-              <p className="lead">שיר אישי לבר מצווה או לבת מצווה שמספר את הסיפור של חתן או כלת השמחה. יניר כותב את המילים, מלחין, מקליט אתכם באולפן ומפיק פלייבק אלקטרוני מלא — מוכן להשמעה באירוע, לסרטון ולשיתוף ברשתות.</p>
-              <div className="prow"><span className="price">₪4,000</span><span className="unit">כתיבה, הקלטה והפקת פלייבק</span></div>
-              <div className="row">
-                <a className="btn btn-main" href="#booking" onClick={() => pick({ id: 'barmitzvah' })}>שריינו תאריך הקלטה</a>
-                <a className="btn btn-glass" href="/bar-mitzvah">כל הפרטים על שיר בר / בת מצווה</a>
-              </div>
-            </div>
-            <ol className="steps">
-              <li><div><b>שיחת היכרות</b><span>מספרים על חתן / כלת השמחה, תחביבים, משפחה ורגעים מיוחדים.</span></div></li>
-              <li><div><b>כתיבה והלחנה</b><span>יניר כותב מילים ולחן אישיים, ושולח לאישור.</span></div></li>
-              <li><div><b>הקלטה באולפן</b><span>חוויה כיפית באולפן — גם בלי ניסיון בשירה, עם ליווי צמוד.</span></div></li>
-              <li><div><b>הפקה, מיקס ומאסטר</b><span>פלייבק אלקטרוני מלא, תיקונים וקובץ מוכן לאירוע.</span></div></li>
-            </ol>
           </div>
         </section>
 
-        <section id="about" className="band sec" aria-labelledby="about-title">
-          <div className="wrap">
-            <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(320px,1fr))' }}>
-              <article className="glass card lift" style={{ padding: 32 }}>
-                <span className="chip">אודות</span>
-                <h2 id="about-title" className="d h2" style={{ fontSize: 36 }}>יניר סול — אמן על הבמה, מפיק מאחורי הקונסולה</h2>
-                <p style={{ fontSize: 18, color: 'var(--ink)' }}>יניר סול הוא זמר, כותב, מלחין ומפיק מוזיקלי. ב־SOL Production באור יהודה הוא מלווה אמנים, להקות ומשפחות מהרעיון הראשון ועד המאסטר הסופי — כתיבה, עיבוד, הקלטה, מיקס, מאסטרינג והפקת קליפים תחת קורת גג אחת.</p>
+        <section id="music" aria-labelledby="music-title" style={{ scrollMarginTop: 110 }}>
+          <div className="wrap" style={{ paddingBottom: 48 }}>
+            <div className="sec-head">
+              <span className="chip">המוזיקה של יניר</span>
+              <h2 id="music-title" className="d h2">אמן על הבמה, מפיק מאחורי הקונסולה</h2>
+            </div>
+            <div className="bento">
+              <article id="about" className="glass card lift span2" style={{ padding: 32, scrollMarginTop: 110 }}>
+                <h3 className="d" style={{ fontSize: 26, fontWeight: 400 }}>אודות יניר סול</h3>
+                <p style={{ fontSize: 18, lineHeight: 1.7, color: 'var(--ink)' }}>יניר סול הוא זמר, כותב, מלחין ומפיק מוזיקלי. ב־SOL Production באור יהודה הוא מלווה אמנים, להקות ומשפחות מהרעיון הראשון ועד המאסטר הסופי — כתיבה, עיבוד, הקלטה, מיקס, מאסטרינג והפקת קליפים תחת קורת גג אחת.</p>
                 <div className="row" style={{ gap: 10 }}>
                   {['זמר ויוצר', 'מלחין', 'מפיק מוזיקלי', 'הפקת קליפים', 'בעלי אולפן'].map((t) => <span key={t} className="chip">{t}</span>)}
                 </div>
               </article>
-              <article className="glass card lift">
-                <span className="chip">הפקות שיצאו מהאולפן</span>
-                <h3 className="d" style={{ fontSize: 26, fontWeight: 400 }}>קאברים וסינגלים</h3>
-                <ul className="ticks">
-                  <li><span><b>סביב</b> — סינגל מקורי של יניר סול · <a href={yt('יניר סול סביב')} target="_blank" rel="noopener">YouTube</a> · <a href={'https://open.spotify.com/search/' + encodeURIComponent('יניר סול סביב')} target="_blank" rel="noopener">Spotify</a></span></li>
-                  <li><span><b>קמה מהפחד</b> — קאבר, ליאן שמחון · <a href={yt('ליאן שמחון קמה מהפחד')} target="_blank" rel="noopener">YouTube</a></span></li>
-                </ul>
+              <article className="glass card lift" style={{ padding: 24, gap: 18 }}>
+                <div>
+                  <div style={{ font: '600 12px Heebo', color: 'var(--muted)' }}>סינגל מקורי של יניר סול</div>
+                  <h3 className="d" style={{ margin: '2px 0 0', fontSize: 24, fontWeight: 400 }}>סביב</h3>
+                </div>
+                <div className="wave" aria-hidden="true">{WAVE.map((h, i) => <i key={i} style={{ height: h + '%' }} />)}</div>
+                <div className="row" style={{ gap: 8 }}>
+                  <a className="pill" href={'https://open.spotify.com/search/' + encodeURIComponent('יניר סול סביב')} target="_blank" rel="noopener">Spotify</a>
+                  <a className="pill" href={'https://music.apple.com/il/search?term=' + encodeURIComponent('יניר סול סביב')} target="_blank" rel="noopener">Apple Music</a>
+                  <a className="pill" href={yt('יניר סול סביב')} target="_blank" rel="noopener">YouTube</a>
+                </div>
               </article>
+            </div>
+          </div>
+        </section>
+
+        <section aria-label="האולפן בפעולה" className="wrap" style={{ paddingBottom: 96 }}>
+          <div style={{ maxWidth: 760, margin: '0 auto' }}><StudioViz /></div>
+        </section>
+
+        <section aria-labelledby="releases-title" className="band">
+          <div className="wrap sec" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <div>
+              <h2 id="releases-title" className="d" style={{ margin: 0, fontSize: 32, fontWeight: 400 }}>קאברים וסינגלים שיצאו תחת SOL Production</h2>
+              <p style={{ margin: '6px 0 0', fontSize: 17, color: 'var(--muted)' }}>הפקות שנולדו באולפן ויצאו לעולם.</p>
+            </div>
+            <div className="rel-grid">
+              <a className="glass lift rel" href={yt('ליאן שמחון קמה מהפחד')} target="_blank" rel="noopener" aria-label="צפייה ביוטיוב: קמה מהפחד – ליאן שמחון">
+                <div className="rel-thumb">
+                  <span className="rel-yt">YouTube</span>
+                  <span className="rel-play" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><polygon points="7 4 20 12 7 20 7 4" /></svg></span>
+                </div>
+                <div className="rel-info">
+                  <div>
+                    <div style={{ font: '600 12px Heebo', color: 'var(--muted)' }}>קאבר · הפקת SOL Production</div>
+                    <div className="d" style={{ fontSize: 24, marginTop: 2, fontWeight: 500 }}>קמה מהפחד</div>
+                    <div style={{ fontSize: 15, color: 'var(--muted)' }}>ליאן שמחון</div>
+                  </div>
+                  <span className="btn btn-main btn-sm" style={{ flex: 'none' }}>צפייה</span>
+                </div>
+              </a>
             </div>
           </div>
         </section>
@@ -131,18 +157,6 @@ export default function Home() {
           </div>
           <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(320px,1fr))' }}>
             <article className="glass card lift" style={{ padding: 32 }}>
-              <div className="ico"><IconMixer /></div>
-              <h3 className="d" style={{ fontSize: 28, fontWeight: 400 }}>אולפן הקלטות והפקה</h3>
-              <p>חדר בקרה ותא שירה להקלטה, הפקה ועיבוד — מהרעיון ועד המאסטר.</p>
-              <ul className="ticks">
-                <li>תא שירה (Vocal Booth)</li>
-                <li>כתיבה והלחנה מאפס, עיבוד מלא</li>
-                <li>כיוון קולות, מיקס ומאסטרינג</li>
-                <li>הקלטת שירי בר / בת מצווה, ברכות ושירים לאירועים</li>
-              </ul>
-              <a className="btn btn-glass btn-sm" href="#booking" style={{ alignSelf: 'flex-start' }} onClick={() => pick({ service: 'single' })}>הזמנת סשן באולפן</a>
-            </article>
-            <article className="glass card lift" style={{ padding: 32 }}>
               <div className="ico"><IconSpeaker /></div>
               <h3 className="d" style={{ fontSize: 28, fontWeight: 400 }}>חדר חזרות אקוסטי</h3>
               <p>חלל מטופל אקוסטית, מוכן להרכב מלא — פשוט מגיעים, מתחברים ומנגנים.</p>
@@ -153,6 +167,18 @@ export default function Home() {
                 <li>ניתוב ערוצים ישיר לחדר הבקרה להקלטה מלאה</li>
               </ul>
               <a className="btn btn-glass btn-sm" href="#booking" style={{ alignSelf: 'flex-start' }} onClick={() => pick({ id: 'reh-base' })}>הזמנת חדר חזרות</a>
+            </article>
+            <article className="glass card lift" style={{ padding: 32 }}>
+              <div className="ico"><IconMixer /></div>
+              <h3 className="d" style={{ fontSize: 28, fontWeight: 400 }}>אולפן הקלטות והפקה</h3>
+              <p>חדר בקרה ותא שירה להקלטה, הפקה ועיבוד — מהרעיון ועד המאסטר.</p>
+              <ul className="ticks">
+                <li>תא שירה (Vocal Booth)</li>
+                <li>כתיבה והלחנה מאפס, עיבוד מלא</li>
+                <li>כיוון קולות, מיקס ומאסטרינג</li>
+                <li>הקלטת שירי בר / בת מצווה, ברכות ושירים לאירועים</li>
+              </ul>
+              <a className="btn btn-glass btn-sm" href="#booking" style={{ alignSelf: 'flex-start' }} onClick={() => pick({ service: 'single' })}>הזמנת סשן באולפן</a>
             </article>
           </div>
         </section>
@@ -180,6 +206,27 @@ export default function Home() {
 
         <Pricing selectedId={bk.selected?.id} onPick={pick} />
         <Booking st={bk} setSt={setBk} />
+        <section id="bar-mitzvah" className="wrap" aria-labelledby="bm-title" style={{ paddingBottom: 96, scrollMarginTop: 110 }}>
+          <div className="glass bm">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+              <span className="chip" style={{ background: 'var(--orange)', color: '#0b0b10' }}>הכי מבוקש</span>
+              <h2 id="bm-title" className="d">שיר בר מצווה ובת מצווה — נכתב, מוקלט ומופק במיוחד בשבילכם</h2>
+              <p className="lead">שיר אישי לבר מצווה או לבת מצווה שמספר את הסיפור של חתן או כלת השמחה. יניר כותב את המילים, מלחין, מקליט אתכם באולפן ומפיק פלייבק אלקטרוני מלא — מוכן להשמעה באירוע, לסרטון ולשיתוף ברשתות.</p>
+              <div className="prow"><span className="price">₪4,000</span><span className="unit">כתיבה, הקלטה והפקת פלייבק</span></div>
+              <div className="row">
+                <a className="btn btn-main" href="#booking" onClick={() => pick({ id: 'barmitzvah' })}>שריינו תאריך הקלטה</a>
+                <a className="btn btn-glass" href="/bar-mitzvah">כל הפרטים על שיר בר / בת מצווה</a>
+              </div>
+            </div>
+            <ol className="steps">
+              <li><div><b>שיחת היכרות</b><span>מספרים על חתן / כלת השמחה, תחביבים, משפחה ורגעים מיוחדים.</span></div></li>
+              <li><div><b>כתיבה והלחנה</b><span>יניר כותב מילים ולחן אישיים, ושולח לאישור.</span></div></li>
+              <li><div><b>הקלטה באולפן</b><span>חוויה כיפית באולפן — גם בלי ניסיון בשירה, עם ליווי צמוד.</span></div></li>
+              <li><div><b>הפקה, מיקס ומאסטר</b><span>פלייבק אלקטרוני מלא, תיקונים וקובץ מוכן לאירוע.</span></div></li>
+            </ol>
+          </div>
+        </section>
+
         <Faq title="שאלות נפוצות על הקלטה באולפן" items={HOME_FAQ} />
         <Location
           chip="איך מגיעים"
