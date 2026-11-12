@@ -220,3 +220,10 @@ footer{background:#07070b;border-top:1px solid var(--panel-2);padding:40px 16px 
   .vinyl{width:96px;height:96px}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important;scroll-behavior:auto !important}}
+
+/* studio video (top of home page) */
+.vidsec{padding:24px 16px 8px}
+.vidwrap{position:relative;max-width:980px;margin:0 auto;border-radius:22px;overflow:hidden;border:1px solid var(--line);box-shadow:0 0 0 1px rgba(139,92,246,.35),0 0 60px -12px rgba(139,92,246,.55),0 30px 60px -30px rgba(0,0,0,.9);background:#000}
+.vidwrap video{display:block;width:100%;height:auto;aspect-ratio:678/380;object-fit:cover}
+.vidbtn{position:absolute;left:14px;bottom:14px;width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.3);background:rgba(11,11,16,.7);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(8px)}
+.vidbtn:hover{border-color:var(--violet-2);box-shadow:0 0 16px rgba(139,92,246,.5)}

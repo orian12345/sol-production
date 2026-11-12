@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Layout, Header, Footer, BookBar } from '../components/Layout.jsx';
-import { StudioViz, Faq, Location } from '../components/Sections.jsx';
+import { StudioViz, StudioVideo, Faq, Location } from '../components/Sections.jsx';
 import { Pricing } from '../components/Pricing.jsx';
 import { Booking } from '../components/Booking.jsx';
 import { IconWA, IconMixer, IconSpeaker, IconInstagram, IconTikTok, IconYouTube, IconFacebook } from '../components/icons.jsx';
@@ -51,6 +51,8 @@ export default function Home() {
       />
 
       <main>
+        <StudioVideo />
+
         <section className="social" aria-labelledby="social-title">
           <div className="wrap social-in">
             <div>

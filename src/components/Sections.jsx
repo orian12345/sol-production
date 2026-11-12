@@ -1,4 +1,47 @@
+import { useEffect, useRef, useState } from 'react';
 import { MAP_EMBED, WAZE, GMAPS, TEL } from '../data.js';
+
+/* סרטון האולפן בראש הדף: מתנגן אוטומטית בלי קול, עם כפתור עצירה.
+   לא מתנגן אוטומטית למי שביקש "הפחתת תנועה", ונעצר כשבוחרים "עצירת אנימציות" בתפריט הנגישות. */
+export function StudioVideo() {
+  const ref = useRef(null);
+  const [paused, setPaused] = useState(false);
+
+  useEffect(() => {
+    const v = ref.current;
+    if (!v) return;
+    v.muted = true; // דפדפנים מאפשרים ניגון אוטומטי רק לסרטון מושתק
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const root = v.closest('.root');
+    const stillNow = () => root && root.classList.contains('still');
+    if (reduce || stillNow()) { v.pause(); setPaused(true); }
+    else { const p = v.play(); if (p && p.catch) p.catch(() => setPaused(true)); }
+    if (!root) return;
+    const mo = new MutationObserver(() => { if (stillNow() && !v.paused) { v.pause(); setPaused(true); } });
+    mo.observe(root, { attributes: true, attributeFilter: ['class'] });
+    return () => mo.disconnect();
+  }, []);
+
+  const toggle = () => {
+    const v = ref.current;
+    if (!v) return;
+    if (v.paused) { v.play(); setPaused(false); } else { v.pause(); setPaused(true); }
+  };
+
+  return (
+    <section aria-label="סרטון האולפן" className="vidsec">
+      <div className="vidwrap">
+        <video ref={ref} src="/studio.mp4" autoPlay muted loop playsInline preload="metadata"
+          aria-label="סרטון היכרות עם אולפן ההקלטות של SOL Production – יניר סול הפקות" />
+        <button type="button" className="vidbtn" onClick={toggle} aria-label={paused ? 'הפעלת הסרטון' : 'עצירת הסרטון'}>
+          {paused
+            ? <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="7 4 20 12 7 20 7 4" /></svg>
+            : <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg>}
+        </button>
+      </div>
+    </section>
+  );
+}
 
 const EQ_COLORS = ['#8b5cf6', '#3b82f6', '#a78bfa', '#60a5fa', '#ff7a1a', '#6366f1'];
 const BARS = Array.from({ length: 28 }, (_, i) => ({
