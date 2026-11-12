@@ -5,33 +5,60 @@ import { MAP_EMBED, WAZE, GMAPS, TEL } from '../data.js';
    לא מתנגן אוטומטית למי שביקש "הפחתת תנועה", ונעצר כשבוחרים "עצירת אנימציות" בתפריט הנגישות. */
 export function StudioVideo() {
   const ref = useRef(null);
+  const stopped = useRef(false); // המשתמש עצר / ביקש בלי תנועה — לא מנגנים שוב לבד
   const [paused, setPaused] = useState(false);
 
   useEffect(() => {
     const v = ref.current;
     if (!v) return;
-    v.muted = true; // דפדפנים מאפשרים ניגון אוטומטי רק לסרטון מושתק
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // אייפון ודפדפנים בטלפון מנגנים אוטומטית רק סרטון מושתק עם playsinline
+    v.muted = true; v.defaultMuted = true;
+    v.setAttribute('muted', ''); v.setAttribute('playsinline', ''); v.setAttribute('webkit-playsinline', '');
+
     const root = v.closest('.root');
-    const stillNow = () => root && root.classList.contains('still');
-    if (reduce || stillNow()) { v.pause(); setPaused(true); }
-    else { const p = v.play(); if (p && p.catch) p.catch(() => setPaused(true)); }
-    if (!root) return;
-    const mo = new MutationObserver(() => { if (stillNow() && !v.paused) { v.pause(); setPaused(true); } });
-    mo.observe(root, { attributes: true, attributeFilter: ['class'] });
-    return () => mo.disconnect();
+    const stillNow = () => !!root && root.classList.contains('still');
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || stillNow()) {
+      stopped.current = true; v.pause(); setPaused(true);
+    }
+
+    const tryPlay = () => {
+      if (stopped.current || stillNow() || !v.paused) return;
+      const p = v.play();
+      if (p && p.then) p.then(() => setPaused(false)).catch(() => {});
+    };
+    // ניסיונות חוזרים: מיד, אחרי טעינה, ובמגע/גלילה ראשונים (כשהטלפון חוסם ניגון אוטומטי)
+    tryPlay();
+    const t = setTimeout(tryPlay, 300);
+    v.addEventListener('loadeddata', tryPlay);
+    v.addEventListener('canplay', tryPlay);
+    const once = () => { tryPlay(); ['touchstart', 'scroll'].forEach((e) => window.removeEventListener(e, once)); };
+    ['touchstart', 'scroll'].forEach((e) => window.addEventListener(e, once, { passive: true }));
+
+    let mo;
+    if (root) {
+      mo = new MutationObserver(() => { if (stillNow() && !v.paused) { stopped.current = true; v.pause(); setPaused(true); } });
+      mo.observe(root, { attributes: true, attributeFilter: ['class'] });
+    }
+    return () => {
+      clearTimeout(t);
+      v.removeEventListener('loadeddata', tryPlay);
+      v.removeEventListener('canplay', tryPlay);
+      ['touchstart', 'scroll'].forEach((e) => window.removeEventListener(e, once));
+      if (mo) mo.disconnect();
+    };
   }, []);
 
   const toggle = () => {
     const v = ref.current;
     if (!v) return;
-    if (v.paused) { v.play(); setPaused(false); } else { v.pause(); setPaused(true); }
+    if (v.paused) { stopped.current = false; v.play(); setPaused(false); }
+    else { stopped.current = true; v.pause(); setPaused(true); }
   };
 
   return (
     <section aria-label="סרטון האולפן" className="vidsec">
       <div className="vidwrap">
-        <video ref={ref} src="/studio.mp4" autoPlay muted loop playsInline preload="metadata"
+        <video ref={ref} src="/studio.mp4" poster="/studio-poster.jpg" autoPlay muted loop playsInline disablePictureInPicture preload="auto"
           aria-label="סרטון היכרות עם אולפן ההקלטות של SOL Production – יניר סול הפקות" />
         <button type="button" className="vidbtn" onClick={toggle} aria-label={paused ? 'הפעלת הסרטון' : 'עצירת הסרטון'}>
           {paused
