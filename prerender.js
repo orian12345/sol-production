@@ -4,7 +4,12 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const ssrDir = path.resolve('dist-ssr');
-const { render } = await import(pathToFileURL(path.join(ssrDir, 'entry-server.js')).href);
+// מוצאים את קובץ ה-SSR גם אם כלי הבנייה (למשל Cloudflare) שם אותו בתת-תיקייה או הוסיף לשם שלו hash
+const entry = fs.readdirSync(ssrDir, { recursive: true })
+  .map(String)
+  .find((f) => /(^|[\\/])entry-server[^\\/]*\.m?js$/.test(f));
+if (!entry) throw new Error('entry-server bundle not found in dist-ssr');
+const { render } = await import(pathToFileURL(path.join(ssrDir, entry)).href);
 
 const pages = { 'index.html': 'home', 'bar-mitzvah.html': 'barmitzvah', 'accessibility.html': 'accessibility' };
 for (const [file, page] of Object.entries(pages)) {
