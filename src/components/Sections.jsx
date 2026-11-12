@@ -1,66 +1,29 @@
 import { useEffect, useRef, useState } from 'react';
 import { MAP_EMBED, WAZE, GMAPS, TEL } from '../data.js';
 
-/* סרטון האולפן בראש הדף: מתנגן אוטומטית בלי קול, עם כפתור עצירה.
-   לא מתנגן אוטומטית למי שביקש "הפחתת תנועה", ונעצר כשבוחרים "עצירת אנימציות" בתפריט הנגישות. */
+/* סרטון האולפן בראש הדף — כתמונה זזה (WebP מונפש), כדי שירוץ לבד בכל טלפון,
+   גם באייפון במצב חיסכון בסוללה (שחוסם ניגון אוטומטי של וידאו).
+   כפתור עצירה מחליף לתמונה סטטית. נעצר לבד למי שביקש "הפחתת תנועה" או בחר "עצירת אנימציות". */
 export function StudioVideo() {
   const ref = useRef(null);
-  const stopped = useRef(false); // המשתמש עצר / ביקש בלי תנועה — לא מנגנים שוב לבד
   const [paused, setPaused] = useState(false);
 
   useEffect(() => {
-    const v = ref.current;
-    if (!v) return;
-    // אייפון ודפדפנים בטלפון מנגנים אוטומטית רק סרטון מושתק עם playsinline
-    v.muted = true; v.defaultMuted = true;
-    v.setAttribute('muted', ''); v.setAttribute('playsinline', ''); v.setAttribute('webkit-playsinline', '');
-
-    const root = v.closest('.root');
+    const root = ref.current && ref.current.closest('.root');
     const stillNow = () => !!root && root.classList.contains('still');
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || stillNow()) {
-      stopped.current = true; v.pause(); setPaused(true);
-    }
-
-    const tryPlay = () => {
-      if (stopped.current || stillNow() || !v.paused) return;
-      const p = v.play();
-      if (p && p.then) p.then(() => setPaused(false)).catch(() => {});
-    };
-    // ניסיונות חוזרים: מיד, אחרי טעינה, ובמגע/גלילה ראשונים (כשהטלפון חוסם ניגון אוטומטי)
-    tryPlay();
-    const t = setTimeout(tryPlay, 300);
-    v.addEventListener('loadeddata', tryPlay);
-    v.addEventListener('canplay', tryPlay);
-    const once = () => { tryPlay(); ['touchstart', 'scroll'].forEach((e) => window.removeEventListener(e, once)); };
-    ['touchstart', 'scroll'].forEach((e) => window.addEventListener(e, once, { passive: true }));
-
-    let mo;
-    if (root) {
-      mo = new MutationObserver(() => { if (stillNow() && !v.paused) { stopped.current = true; v.pause(); setPaused(true); } });
-      mo.observe(root, { attributes: true, attributeFilter: ['class'] });
-    }
-    return () => {
-      clearTimeout(t);
-      v.removeEventListener('loadeddata', tryPlay);
-      v.removeEventListener('canplay', tryPlay);
-      ['touchstart', 'scroll'].forEach((e) => window.removeEventListener(e, once));
-      if (mo) mo.disconnect();
-    };
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || stillNow()) setPaused(true);
+    if (!root) return;
+    const mo = new MutationObserver(() => { if (stillNow()) setPaused(true); });
+    mo.observe(root, { attributes: true, attributeFilter: ['class'] });
+    return () => mo.disconnect();
   }, []);
-
-  const toggle = () => {
-    const v = ref.current;
-    if (!v) return;
-    if (v.paused) { stopped.current = false; v.play(); setPaused(false); }
-    else { stopped.current = true; v.pause(); setPaused(true); }
-  };
 
   return (
     <section aria-label="סרטון האולפן" className="vidsec">
-      <div className="vidwrap">
-        <video ref={ref} src="/studio.mp4" poster="/studio-poster.jpg" autoPlay muted loop playsInline disablePictureInPicture preload="auto"
-          aria-label="סרטון היכרות עם אולפן ההקלטות של SOL Production – יניר סול הפקות" />
-        <button type="button" className="vidbtn" onClick={toggle} aria-label={paused ? 'הפעלת הסרטון' : 'עצירת הסרטון'}>
+      <div className="vidwrap" ref={ref}>
+        <img className="vidimg" src={paused ? '/studio-poster.jpg' : '/studio.webp'} width="678" height="380"
+          alt="אולפן ההקלטות של SOL Production – יניר סול הפקות: חדר הבקרה, תא השירה וחדר החזרות באור יהודה" />
+        <button type="button" className="vidbtn" onClick={() => setPaused(!paused)} aria-label={paused ? 'הפעלת הסרטון' : 'עצירת הסרטון'}>
           {paused
             ? <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="7 4 20 12 7 20 7 4" /></svg>
             : <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg>}
