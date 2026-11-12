@@ -44,7 +44,7 @@ export default function Home() {
       <Header
         topbar
         brandHref="#top"
-        links={[['#about', 'אודות'], ['/bar-mitzvah.html', 'שיר בר / בת מצווה'], ['#studio', 'האולפן וחדר החזרות'], ['#gear', 'ציוד'], ['#pricing', 'מחירון'], ['#faq', 'שאלות נפוצות']]}
+        links={[['#about', 'אודות'], ['/bar-mitzvah', 'שיר בר / בת מצווה'], ['#studio', 'האולפן וחדר החזרות'], ['#gear', 'ציוד'], ['#pricing', 'מחירון'], ['#faq', 'שאלות נפוצות']]}
         cta={{ href: '#booking', label: 'הזמנת חדר / אולפן' }}
         quick={QUICK}
         onPick={pick}
@@ -73,7 +73,7 @@ export default function Home() {
             <p className="lead" style={{ fontSize: 20, maxWidth: 620 }}>יניר סול | SOL Production — כתיבה והקלטת שיר בר מצווה ובת מצווה, הקלטת קאברים וברכות לאירועים, חדר חזרות אקוסטי עם הקלטת ערוצים מלאה, והפקה מוזיקלית מקצה לקצה.</p>
             <div className="row">
               <a className="btn btn-main" href={WA_HELLO} target="_blank" rel="noopener"><IconWA />שריינו סשן בוואטסאפ</a>
-              <a className="btn btn-glass" href="/bar-mitzvah.html">שיר בר / בת מצווה</a>
+              <a className="btn btn-glass" href="/bar-mitzvah">שיר בר / בת מצווה</a>
             </div>
           </div>
           <div className="hero-viz"><StudioViz /></div>
@@ -88,7 +88,7 @@ export default function Home() {
               <div className="prow"><span className="price">₪4,000</span><span className="unit">כתיבה, הקלטה והפקת פלייבק</span></div>
               <div className="row">
                 <a className="btn btn-main" href="#booking" onClick={() => pick({ id: 'barmitzvah' })}>שריינו תאריך הקלטה</a>
-                <a className="btn btn-glass" href="/bar-mitzvah.html">כל הפרטים על שיר בר / בת מצווה</a>
+                <a className="btn btn-glass" href="/bar-mitzvah">כל הפרטים על שיר בר / בת מצווה</a>
               </div>
             </div>
             <ol className="steps">
@@ -188,7 +188,7 @@ export default function Home() {
         />
       </main>
 
-      <Footer links={[['/bar-mitzvah.html', 'שיר בר מצווה / בת מצווה'], ['#pricing', 'מחירון'], ['/accessibility.html', 'הצהרת נגישות']]} />
+      <Footer links={[['/bar-mitzvah', 'שיר בר מצווה / בת מצווה'], ['#pricing', 'מחירון'], ['/accessibility', 'הצהרת נגישות']]} />
       <BookBar text="מוכנים להקליט?" sub="שריינו סשן באולפן" href="#booking" label="הזמינו סשן" />
     </Layout>
   );

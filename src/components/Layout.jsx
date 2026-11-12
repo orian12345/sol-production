@@ -38,7 +38,7 @@ export function Layout({ children }) {
             <button type="button" className="pill" aria-pressed={!!a.hl} onClick={() => toggle('hl')}>הדגשת קישורים</button>
             <button type="button" className="pill" aria-pressed={!!a.still} onClick={() => toggle('still')}>עצירת אנימציות</button>
             <button type="button" className="pill" style={{ background: 'transparent' }} onClick={() => update({})}>איפוס הגדרות</button>
-            <a href="/accessibility.html" style={{ fontSize: 14 }}>הצהרת נגישות</a>
+            <a href="/accessibility" style={{ fontSize: 14 }}>הצהרת נגישות</a>
           </div>
         )}
         <button type="button" className="a11y-toggle" aria-label="פתיחת תפריט נגישות" aria-expanded={open} aria-controls="a11y-panel" onClick={() => setOpen(!open)}>

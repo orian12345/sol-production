@@ -1,11 +1,9 @@
 // הגדרות Cloudflare: אתר סטטי בלבד — מגישים את התיקייה dist שנבנתה ב-npm run build
+// כתובות נקיות: /bar-mitzvah מגיש את bar-mitzvah.html, ו-/ מגיש את index.html
 {
   "name": "sol-production",
   "compatibility_date": "2026-11-01",
   "assets": {
-    "directory": "./dist",
-    // שומר על כתובות עם .html (כמו ב-sitemap ובכתובות הקנוניות לגוגל)
-    "html_handling": "none",
-    "not_found_handling": "none"
+    "directory": "./dist"
   }
 }
