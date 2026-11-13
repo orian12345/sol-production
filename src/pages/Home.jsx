@@ -97,40 +97,45 @@ export default function Home() {
               <h2 id="music-title" className="d h2">אמן על הבמה, מפיק מאחורי הקונסולה</h2>
               <p className="lead">השירים של יניר, וקאברים וסינגלים שיצאו תחת SOL Production.</p>
             </div>
-            <div className="bento swipe">
-              <article id="about" className="glass card lift span2" style={{ padding: 32, scrollMarginTop: 110 }}>
-                <h3 className="d" style={{ fontSize: 26, fontWeight: 400 }}>אודות יניר סול</h3>
-                <p style={{ fontSize: 18, lineHeight: 1.7, color: 'var(--ink)' }}>יניר סול הוא זמר, כותב, מלחין ומפיק מוזיקלי. ב־SOL Production באור יהודה הוא מלווה אמנים, להקות ומשפחות מהרעיון הראשון ועד המאסטר הסופי — כתיבה, עיבוד, הקלטה, מיקס, מאסטרינג והפקת קליפים תחת קורת גג אחת.</p>
-                <div className="row hide-m" style={{ gap: 10 }}>
+            <div className="music-grid swipe">
+              <article id="about" className="glass card lift about-card" style={{ scrollMarginTop: 110 }}>
+                <span className="chip">אודות</span>
+                <h3 className="d">יניר סול</h3>
+                <p>יניר סול הוא זמר, כותב, מלחין ומפיק מוזיקלי. <span style={{ whiteSpace: 'nowrap' }}>ב־SOL Production</span> באור יהודה הוא מלווה אמנים, להקות ומשפחות מהרעיון הראשון ועד המאסטר הסופי — כתיבה, עיבוד, הקלטה, מיקס, מאסטרינג והפקת קליפים תחת קורת גג אחת.</p>
+                <div className="row hide-m" style={{ gap: 8, marginTop: 'auto' }}>
                   {['זמר ויוצר', 'מלחין', 'מפיק מוזיקלי', 'הפקת קליפים', 'בעלי אולפן'].map((t) => <span key={t} className="chip">{t}</span>)}
                 </div>
               </article>
-              <article className="glass card lift" style={{ padding: 24, gap: 18 }}>
-                <div>
-                  <div style={{ font: '600 12px Heebo', color: 'var(--muted)' }}>סינגל מקורי של יניר סול</div>
-                  <h3 className="d" style={{ margin: '2px 0 0', fontSize: 24, fontWeight: 400 }}>סביב</h3>
+
+              <article className="glass lift media">
+                <div className="media-thumb">
+                  <span className="media-tag">סינגל מקורי</span>
+                  <div className="wave" aria-hidden="true">{WAVE.map((h, i) => <i key={i} style={{ height: h + '%' }} />)}</div>
                 </div>
-                <div className="wave" aria-hidden="true">{WAVE.map((h, i) => <i key={i} style={{ height: h + '%' }} />)}</div>
-                <div className="row" style={{ gap: 8 }}>
-                  <a className="pill" href={'https://open.spotify.com/search/' + encodeURIComponent('יניר סול סביב')} target="_blank" rel="noopener">Spotify</a>
-                  <a className="pill" href={'https://music.apple.com/il/search?term=' + encodeURIComponent('יניר סול סביב')} target="_blank" rel="noopener">Apple Music</a>
-                  <a className="pill" href={yt('יניר סול סביב')} target="_blank" rel="noopener">YouTube</a>
+                <div className="media-body">
+                  <h3 className="d">סביב</h3>
+                  <span className="media-sub">יניר סול</span>
+                  <div className="media-actions">
+                    <a className="pill" href={'https://open.spotify.com/search/' + encodeURIComponent('יניר סול סביב')} target="_blank" rel="noopener">Spotify</a>
+                    <a className="pill" href={'https://music.apple.com/il/search?term=' + encodeURIComponent('יניר סול סביב')} target="_blank" rel="noopener">Apple Music</a>
+                    <a className="pill" href={yt('יניר סול סביב')} target="_blank" rel="noopener">YouTube</a>
+                  </div>
                 </div>
               </article>
-              <a className="glass lift rel" href={yt('ליאן שמחון קמה מהפחד')} target="_blank" rel="noopener" aria-label="צפייה ביוטיוב: קמה מהפחד – ליאן שמחון">
-                <div className="rel-thumb">
-                  <span className="rel-yt">YouTube</span>
+
+              <article className="glass lift media">
+                <a className="media-thumb" href={yt('ליאן שמחון קמה מהפחד')} target="_blank" rel="noopener" aria-label="צפייה ביוטיוב: קמה מהפחד – ליאן שמחון">
+                  <span className="media-tag yt">YouTube</span>
                   <span className="rel-play" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><polygon points="7 4 20 12 7 20 7 4" /></svg></span>
-                </div>
-                <div className="rel-info">
-                  <div>
-                    <div style={{ font: '600 12px Heebo', color: 'var(--muted)' }}>קאבר · הפקת SOL Production</div>
-                    <div className="d" style={{ fontSize: 24, marginTop: 2, fontWeight: 500 }}>קמה מהפחד</div>
-                    <div style={{ fontSize: 15, color: 'var(--muted)' }}>ליאן שמחון</div>
+                </a>
+                <div className="media-body">
+                  <h3 className="d">קמה מהפחד</h3>
+                  <span className="media-sub">ליאן שמחון · קאבר בהפקת SOL Production</span>
+                  <div className="media-actions">
+                    <a className="btn btn-main btn-sm" href={yt('ליאן שמחון קמה מהפחד')} target="_blank" rel="noopener">צפייה ביוטיוב</a>
                   </div>
-                  <span className="btn btn-main btn-sm" style={{ flex: 'none' }}>צפייה</span>
                 </div>
-              </a>
+              </article>
             </div>
           </div>
         </section>
