@@ -36,7 +36,8 @@ export const PRICING = [
   { id: 'rehearsal', label: 'חדר חזרות', items: [
     { id: 'reh-base', name: 'השכרת חדר חזרות', desc: 'בסיס, ללא סאונדמן', price: '₪120', unit: 'לשעה', service: 'rehearsal' },
     { id: 'reh-sound', name: 'חדר חזרות + סאונדמן צמוד', desc: 'סאונדמן צמוד לאורך כל החזרה', price: '₪200', unit: 'לשעה', service: 'rehearsal' },
-    { id: 'reh-multitrack', name: 'הקלטת ערוצים מלאה בחדר חזרות', desc: 'מולטי־טראק, ללא עריכה', price: '₪850', service: 'rehearsal', rec: true },
+    { id: 'reh-multitrack', name: 'הקלטת ערוצים מלאה בחדר חזרות', desc: 'מולטי־טראק, ללא עריכה', price: '₪850', note: 'מה מקבלים: הקלטה מתקדמת של ערוץ נפרד לכל נגן', service: 'rehearsal', rec: true },
+    { id: 'reh-stereo', name: 'הקלטת סטריאו ברצועה אחת', desc: 'הקלטה של החזרה ברצועת סטריאו אחת', price: '₪280', unit: 'עד שעה', service: 'rehearsal' },
     { id: 'reh-full', name: 'סאונדמן + הקלטת ערוצים מלאה', desc: 'סאונדמן צמוד והקלטת מולטי־טראק מלאה של החזרה', price: '₪1,000', unit: 'עד שעה', old: '₪1,150', badge: 'החבילה הכי משתלמת · חיסכון של ₪150', note: 'לא כולל השכרת חדר חזרות. עריכה, מיקס ומאסטרינג בתוספת תשלום, בתיאום עם יניר.', service: 'rehearsal', rec: true },
     { id: 'reh-card10', name: 'כרטיסיית 10 שעות חזרה', desc: 'ללא סאונדמן', price: '₪1,050', old: '₪1,200', badge: 'חיסכון של ₪150', service: 'rehearsal' },
   ] },

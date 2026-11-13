@@ -189,7 +189,6 @@ export default function Home() {
         <section id="bar-mitzvah" className="wrap" aria-labelledby="bm-title" style={{ paddingBottom: 96, scrollMarginTop: 110 }}>
           <div className="glass bm">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-              <span className="chip" style={{ background: 'var(--orange)', color: '#0b0b10' }}>הכי מבוקש</span>
               <h2 id="bm-title" className="d">שיר בר מצווה ובת מצווה — נכתב, מוקלט ומופק במיוחד בשבילכם</h2>
               <p className="lead">שיר אישי לבר מצווה או לבת מצווה שמספר את הסיפור של חתן או כלת השמחה. יניר כותב את המילים, מלחין, מקליט אתכם באולפן ומפיק פלייבק אלקטרוני מלא — מוכן להשמעה באירוע, לסרטון ולשיתוף ברשתות.</p>
               <div className="prow"><span className="price">₪2,950</span><span className="unit">כתיבה, הקלטה והפקת פלייבק</span></div>
