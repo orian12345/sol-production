@@ -595,3 +595,9 @@ footer{background:#090c1e;border-top-color:var(--line-soft)}
 .ac-teaser-txt span{font-size:14px;color:#c9c2ad}
 .ac-teaser-go{flex:none;font:700 14px "Heebo";color:#EAB308;white-space:nowrap}
 @media (max-width:700px){.ac-teaser{flex-wrap:wrap;gap:8px 12px;padding:14px 16px}.ac-teaser-txt span{font-size:13px}.ac-teaser-go{width:100%}}
+/* academy: small round teacher photo */
+.ac-head{flex-direction:row !important;align-items:center;gap:14px !important}
+.ac-head > div{display:flex;flex-direction:column;gap:4px;min-width:0}
+.ac-photo{flex:none;width:76px;height:76px;border-radius:50%;object-fit:cover;object-position:62% 40%;border:2px solid #D4AF37;box-shadow:0 0 0 4px rgba(212,175,55,.12),0 8px 20px -8px rgba(0,0,0,.8);background:#1a1b20}
+.ac-photo-empty{display:flex;align-items:center;justify-content:center;font:800 28px "Heebo";color:#D4AF37;background:radial-gradient(circle at 30% 30%,#2a2614,#141412)}
+@media (max-width:700px){.ac-photo{width:64px;height:64px}}

@@ -29,8 +29,13 @@ function TeacherCard({ t }) {
   return (
     <article className="ac-card" aria-labelledby={'ac-h-' + t.id}>
       <header className="ac-head">
-        <span className="ac-instr">{t.instrument}</span>
-        <h2 id={'ac-h-' + t.id} className="ac-name">{t.teacher}</h2>
+        {t.photo
+          ? <img className="ac-photo" src={t.photo} alt={t.teacher + ' – ' + t.instrument} width="76" height="76" loading="lazy" />
+          : <span className="ac-photo ac-photo-empty" aria-hidden="true">{t.teacher.charAt(0)}</span>}
+        <div>
+          <span className="ac-instr">{t.instrument}</span>
+          <h2 id={'ac-h-' + t.id} className="ac-name">{t.teacher}</h2>
+        </div>
       </header>
 
       <dl className="ac-info">
