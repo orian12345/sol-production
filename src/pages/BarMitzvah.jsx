@@ -85,7 +85,7 @@ export default function BarMitzvah() {
           </>}
         />
       </main>
-      <Footer links={[['/', 'ראשי'], ['/#pricing', 'מחירון'], ['/accessibility', 'הצהרת נגישות']]} />
+      <Footer links={[['/', 'ראשי'], ['/#pricing', 'מחירון']]} />
       <BookBar text="שיר בר / בת מצווה" sub="· ₪2,950" href={BOOK} label="שריינו תאריך" />
     </Layout>
   );

@@ -196,7 +196,7 @@ export default function Home() {
         />
       </main>
 
-      <Footer links={[['/bar-mitzvah', 'שיר בר מצווה / בת מצווה'], ['#pricing', 'מחירון'], ['/accessibility', 'הצהרת נגישות']]} />
+      <Footer links={[['/bar-mitzvah', 'שיר בר מצווה / בת מצווה'], ['#pricing', 'מחירון']]} />
       <BookBar text="מוכנים להקליט?" sub="שריינו סשן באולפן" href="#booking" label="הזמינו סשן" />
     </Layout>
   );

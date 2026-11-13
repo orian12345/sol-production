@@ -102,11 +102,11 @@ export function Footer({ links = [], text }) {
     <footer>
       <div className="foot">
         <div><b style={{ color: 'var(--violet-l)' }}>SOL</b> · {text || <>יניר סול הפקות · אולפן הקלטות וחדר חזרות · {ADDRESS} · <a href={TEL} dir="ltr">{PHONE}</a></>}</div>
-        {links.length > 0 && (
-          <nav aria-label="קישורים בתחתית">
-            {links.map(([href, label]) => <a key={href} href={href}>{label}</a>)}
-          </nav>
-        )}
+        <nav aria-label="קישורים בתחתית">
+          {links.map(([href, label]) => <a key={href} href={href}>{label}</a>)}
+          <a href="/cancellation">מדיניות ביטולים</a>
+          <a href="/accessibility">הצהרת נגישות</a>
+        </nav>
         <div>© {year} SOL Production · כל הזכויות שמורות</div>
       </div>
     </footer>

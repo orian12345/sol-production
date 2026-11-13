@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { SERVICES, BANDS, DURS, waLink } from '../data.js';
+import { SERVICES, BANDS, DURS, waLink, CANCEL_POLICY } from '../data.js';
 import { IconWA, IconClose } from './icons.jsx';
 import { TERMS } from '../terms.js';
 
@@ -295,8 +295,8 @@ export function Booking({ st, setSt }) {
               {err && <p role="alert" style={{ margin: 0, fontSize: 14, color: '#fca5a5', textAlign: 'center' }}>{err}</p>}
               <p className="note" style={{ margin: 0, textAlign: 'center' }}>
                 התאריך משוריין רק אחרי שהתשלום עובר. התשלום מאובטח דרך Morning, והקבלה נשלחת אליך אוטומטית.
-                {cfg.policy ? ' ' + cfg.policy : ''}
               </p>
+              <p className="note policy-note">{CANCEL_POLICY.short} <a href="/cancellation">מדיניות ביטולים</a></p>
               <a className="btn btn-glass btn-sm" href={waLink(msg)} target="_blank" rel="noopener" style={{ width: '100%' }}><IconWA size={18} />שאלה ליניר בוואטסאפ</a>
             </>
           ) : (
@@ -314,6 +314,7 @@ export function Booking({ st, setSt }) {
               <p style={{ margin: 0, fontSize: 14, color: 'var(--muted)', textAlign: 'center' }}>
                 {name ? 'הכול מוכן — לחיצה אחת ונפתח וואטסאפ עם כל הפרטים.' : 'טיפ: הוסיפו שם כדי שיניר ידע למי לחזור.'}
               </p>
+              <p className="note policy-note">{CANCEL_POLICY.short} <a href="/cancellation">מדיניות ביטולים</a></p>
             </>
           )}
           {showQuote && (

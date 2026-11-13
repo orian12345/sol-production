@@ -15,6 +15,7 @@ export default defineConfig(({ isSsrBuild }) => ({
             barmitzvah: r('./bar-mitzvah.html'),
             accessibility: r('./accessibility.html'),
             quote: r('./quote.html'),
+            cancellation: r('./cancellation.html'),
           },
         },
       },
