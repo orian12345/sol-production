@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Layout, Header, Footer, BookBar } from '../components/Layout.jsx';
-import { StudioViz, StudioVideo, Faq, Location } from '../components/Sections.jsx';
+import { StudioVideo, Faq, Location } from '../components/Sections.jsx';
 import { Pricing } from '../components/Pricing.jsx';
 import { Booking } from '../components/Booking.jsx';
 import { IconWA, IconMixer, IconSpeaker, IconNote, IconMic, IconPlay, IconInstagram, IconTikTok, IconYouTube, IconFacebook } from '../components/icons.jsx';
@@ -134,10 +134,6 @@ export default function Home() {
               </article>
             </div>
           </div>
-        </section>
-
-        <section aria-label="האולפן בפעולה" className="wrap hide-m" style={{ paddingBottom: 96 }}>
-          <div style={{ maxWidth: 760, margin: '0 auto' }}><StudioViz /></div>
         </section>
 
         <section id="studio" className="wrap sec studio-compact" aria-labelledby="studio-title">
