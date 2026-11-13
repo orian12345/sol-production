@@ -22,7 +22,7 @@ export function Pricing({ selectedId, onPick }) {
         <h2 id="pricing-title" className="d h2">מחירון אולפן ההקלטות SOL Production</h2>
         <p className="lead">בוחרים שירות, לוחצים "בחרו להזמנה" — והפרטים עוברים ישר להזמנה בוואטסאפ.</p>
       </div>
-      <div className="tabs" role="tablist" aria-label="קטגוריות מחירון">
+      <div className="tabs scroll-x" role="tablist" aria-label="קטגוריות מחירון">
         {PRICING.map((c, i) => (
           <button key={c.id} ref={(el) => (tabRefs.current[i] = el)} type="button" className="pill" role="tab"
             id={'tab-' + c.id} aria-controls={'p-' + c.id} aria-selected={cat === c.id} tabIndex={cat === c.id ? 0 : -1}
@@ -32,7 +32,7 @@ export function Pricing({ selectedId, onPick }) {
         ))}
       </div>
       {PRICING.map((c) => (
-        <div key={c.id} className="panel pgrid" id={'p-' + c.id} role="tabpanel" aria-labelledby={'tab-' + c.id} hidden={cat !== c.id}>
+        <div key={c.id} className="panel pgrid swipe" id={'p-' + c.id} role="tabpanel" aria-labelledby={'tab-' + c.id} hidden={cat !== c.id}>
           {c.items.map((it) => (
             <article key={it.id} className={'glass lift pcard' + (selectedId === it.id ? ' sel' : '')}>
               {it.badge && <span className="chip badge">{it.badge}</span>}

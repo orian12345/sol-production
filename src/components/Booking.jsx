@@ -175,7 +175,7 @@ export function Booking({ st, setSt }) {
         <form className="glass" noValidate onSubmit={(e) => { e.preventDefault(); if (paid) pay(); }}>
           <fieldset>
             <legend className="lbl">1 · איזה שירות?</legend>
-            <div className="opts">
+            <div className="opts scroll-x">
               {SERVICES.map(([id, label]) => pill(st.service === id, () => set({ service: id }), label, id))}
             </div>
           </fieldset>
@@ -218,7 +218,7 @@ export function Booking({ st, setSt }) {
                 <p className="note" style={{ margin: 0 }}>אין שעות פנויות ביום הזה במשך שנבחר. נסו יום אחר או משך קצר יותר.</p>
               )}
               {(!paid || (st.date && !loadingSlots && slots)) && (
-                <div className="opts" dir="ltr" style={{ justifyContent: 'flex-end' }}>
+                <div className="opts scroll-x" dir="ltr" style={{ justifyContent: 'flex-end' }}>
                   {allTimes.map((t) => {
                     const free = !paid || freeOf(t);
                     return pill(time === t, () => set({ time: t }), free ? t : t + ' · תפוס', t, !free);

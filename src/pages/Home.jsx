@@ -78,7 +78,7 @@ export default function Home() {
             </div>
             <h1 id="hero-title" className="d">יניר סול <span style={{ color: 'var(--violet-l)' }}>|</span> SOL Production — <span className="grad">אולפן הקלטות באור יהודה</span></h1>
             <p className="lead" style={{ fontSize: 20, maxWidth: 620 }}>אולפן הקלטות מתקדם, חדר חזרות אקוסטי עם הקלטת ערוצים מלאה, והפקה מוזיקלית מקצה לקצה — כולל הקלטת קאברים, ברכות ושירי בר ובת מצווה.</p>
-            <div className="glass" style={{ padding: '18px 22px', display: 'flex', gap: 14, alignItems: 'center', maxWidth: 600 }}>
+            <div className="glass hide-m" style={{ padding: '18px 22px', display: 'flex', gap: 14, alignItems: 'center', maxWidth: 600 }}>
               {mode === 'artist'
                 ? <><IconNote /><p style={{ margin: 0, fontSize: 16, lineHeight: 1.55 }}>זמר, כותב, מלחין ומפיק. שירים מקוריים והפקות שנולדות מהדף הריק.</p></>
                 : <><IconMic /><p style={{ margin: 0, fontSize: 16, lineHeight: 1.55 }}>חדר חזרות מטופל אקוסטית עם בקליין מלא, אולפן הקלטות עם תא שירה, וכל הערוצים מנותבים ישירות לחדר הבקרה.</p></>}
@@ -100,7 +100,7 @@ export default function Home() {
               <article id="about" className="glass card lift span2" style={{ padding: 32, scrollMarginTop: 110 }}>
                 <h3 className="d" style={{ fontSize: 26, fontWeight: 400 }}>אודות יניר סול</h3>
                 <p style={{ fontSize: 18, lineHeight: 1.7, color: 'var(--ink)' }}>יניר סול הוא זמר, כותב, מלחין ומפיק מוזיקלי. ב־SOL Production באור יהודה הוא מלווה אמנים, להקות ומשפחות מהרעיון הראשון ועד המאסטר הסופי — כתיבה, עיבוד, הקלטה, מיקס, מאסטרינג והפקת קליפים תחת קורת גג אחת.</p>
-                <div className="row" style={{ gap: 10 }}>
+                <div className="row hide-m" style={{ gap: 10 }}>
                   {['זמר ויוצר', 'מלחין', 'מפיק מוזיקלי', 'הפקת קליפים', 'בעלי אולפן'].map((t) => <span key={t} className="chip">{t}</span>)}
                 </div>
               </article>
@@ -120,7 +120,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section aria-label="האולפן בפעולה" className="wrap" style={{ paddingBottom: 96 }}>
+        <section aria-label="האולפן בפעולה" className="wrap hide-m" style={{ paddingBottom: 96 }}>
           <div style={{ maxWidth: 760, margin: '0 auto' }}><StudioViz /></div>
         </section>
 
@@ -155,7 +155,7 @@ export default function Home() {
             <h2 id="studio-title" className="d h2">אולפן ההקלטות וחדר החזרות</h2>
             <p className="lead">שני חללים, חיבור אחד: מה שמנוגן בחדר החזרות מגיע ישירות לחדר הבקרה — ערוץ לכל כלי.</p>
           </div>
-          <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(320px,1fr))' }}>
+          <div className="grid swipe" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(320px,1fr))' }}>
             <article className="glass card lift" style={{ padding: 32 }}>
               <div className="ico"><IconSpeaker /></div>
               <h3 className="d" style={{ fontSize: 28, fontWeight: 400 }}>חדר חזרות אקוסטי</h3>
@@ -186,7 +186,7 @@ export default function Home() {
         <section id="gear" className="band sec" aria-labelledby="gear-title">
           <div className="wrap">
             <div className="sec-head"><span className="chip">Tech Specs</span><h2 id="gear-title" className="d h2">המפרט הטכני של האולפן</h2></div>
-            <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 20 }}>
+            <div className="grid swipe" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 20 }}>
               {[
                 ['MIXING CONSOLE', 'Allen & Heath Qu-7', 'קונסולת מיקס דיגיטלית לניהול החדר, המוניטורים וניתוב הערוצים.'],
                 ['AUDIO INTERFACE', 'RME + TotalMix FX', 'כרטיס קול RME עם TotalMix FX — המרה נקייה וניתוב גמיש.'],
@@ -218,7 +218,7 @@ export default function Home() {
                 <a className="btn btn-glass" href="/bar-mitzvah">כל הפרטים על שיר בר / בת מצווה</a>
               </div>
             </div>
-            <ol className="steps">
+            <ol className="steps hide-m">
               <li><div><b>שיחת היכרות</b><span>מספרים על חתן / כלת השמחה, תחביבים, משפחה ורגעים מיוחדים.</span></div></li>
               <li><div><b>כתיבה והלחנה</b><span>יניר כותב מילים ולחן אישיים, ושולח לאישור.</span></div></li>
               <li><div><b>הקלטה באולפן</b><span>חוויה כיפית באולפן — גם בלי ניסיון בשירה, עם ליווי צמוד.</span></div></li>

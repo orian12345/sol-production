@@ -252,3 +252,60 @@ footer{background:#07070b;border-top:1px solid var(--panel-2);padding:40px 16px 
 .pill:disabled{opacity:.4;cursor:not-allowed;text-decoration:line-through}
 .btn:disabled{opacity:.7;cursor:wait}
 .notice.demo{background:#1d1533;border:1px dashed var(--violet-2);color:#e9e2ff}
+
+/* ===== Phone: shorter page (computer layout unchanged) ===== */
+@media (max-width:700px){
+  .hide-m{display:none !important}
+  /* header: not stuck to the screen, one-line quick row */
+  .hdr{position:static}
+  .navwrap{padding:10px 14px}
+  .nav{gap:10px}
+  .brand .mono{width:38px;height:38px}
+  .brand .he{font-size:16px}
+  .brand .en{display:none}
+  .nav .btn-sm{min-height:44px;padding:0 14px;font-size:14px}
+  .quick-lbl{display:none}
+  /* sideways-scroll rows (buttons) */
+  .scroll-x{flex-wrap:nowrap !important;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;margin-inline:-16px;padding-inline:16px}
+  .scroll-x::-webkit-scrollbar{display:none}
+  .scroll-x > *{flex:none}
+  .quick-in.scroll-x{margin:0}
+  /* swipeable cards instead of a long stack */
+  .swipe:not([hidden]){display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:14px;margin-inline:-16px;padding:4px 16px 12px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .swipe::-webkit-scrollbar{display:none}
+  .swipe > *{flex:0 0 84%;scroll-snap-align:center;min-width:0}
+  .swipe .lift:hover{transform:none}
+  /* tighter spacing */
+  .sec{padding-top:44px;padding-bottom:44px}
+  .sec-head{margin-bottom:20px;gap:8px}
+  .h2,.bm h2{font-size:28px}
+  .lead{font-size:16px}
+  .hero{padding-top:28px;padding-bottom:36px;gap:20px}
+  .hero-txt{gap:16px}
+  .hero h1{font-size:32px}
+  .hero .lead{font-size:16px !important}
+  .vidsec{padding:12px 12px 4px}
+  .social-in{padding-top:14px;padding-bottom:14px;gap:10px}
+  .social h2{font-size:20px !important}
+  .social p{display:none}
+  .social-btns{flex-wrap:nowrap;gap:8px;width:100%}
+  .sbtn{flex:1;justify-content:center;min-height:44px;padding:0;font-size:0;gap:0}
+  .card{padding:20px !important;gap:10px}
+  .card p{font-size:15px}
+  .ticks{gap:8px;font-size:15px}
+  #music .wrap{padding-bottom:8px !important}
+  .bento{gap:14px}
+  .bm{padding:22px;gap:16px}
+  .faq summary{padding:16px 18px;font-size:16px}
+  .faq details p{padding:0 18px 16px}
+  .loc{padding:20px;gap:18px}
+  .map{height:170px}
+  .loc .h2{font-size:26px !important}
+  .bk form{padding:18px;gap:18px}
+  .bk aside{padding:20px;gap:12px}
+  .pcard{padding:20px;gap:10px}
+  .price{font-size:28px}
+  #releases-title{font-size:24px !important}
+  footer{padding:24px 16px 100px}
+}
+a[dir="ltr"]{white-space:nowrap}

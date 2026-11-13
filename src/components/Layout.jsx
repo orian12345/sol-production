@@ -63,7 +63,7 @@ export function Header({ brandHref = '/', links = [], cta, quick, onPick, topbar
   return (
     <header className="hdr">
       {topbar && (
-        <div className="topbar"><div className="topbar-in">
+        <div className="topbar hide-m"><div className="topbar-in">
           <span>{ADDRESS} · {HOURS}</span>
           <div className="row" style={{ gap: 18 }}>
             <a href={TEL}>{PHONE}</a>
@@ -83,7 +83,7 @@ export function Header({ brandHref = '/', links = [], cta, quick, onPick, topbar
         </nav>
       </div>
       {quick && (
-        <nav className="quick" aria-label="הזמנה מהירה"><div className="quick-in">
+        <nav className="quick" aria-label="הזמנה מהירה"><div className="quick-in scroll-x">
           <span className="quick-lbl">הזמנה מהירה:</span>
           {quick.map((q) => (
             <a key={q.label} className="qbtn" href="#booking" onClick={() => onPick(q.pick)}>{q.label}</a>
