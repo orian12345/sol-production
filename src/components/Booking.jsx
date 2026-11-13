@@ -24,8 +24,13 @@ export function Booking({ st, setSt }) {
   const [result, setResult] = useState('');       // 'booked' | 'failed'
 
   const paid = cfg.configured;
-  const isReh = st.service === 'rehearsal';
-  const showHours = paid || isReh || st.service === 'write';
+  const services = st.services && st.services.length ? st.services : ['rehearsal'];
+  const selected = st.selected || [];
+  const isReh = services.includes('rehearsal');
+  const showHours = paid || isReh || services.includes('write');
+  // לחיצה על שירות מוסיפה/מורידה אותו (תמיד נשאר לפחות אחד)
+  const toggleSvc = (id) => set({ services: services.includes(id) ? (services.length > 1 ? services.filter((x) => x !== id) : services) : [...services, id] });
+  const removeSel = (id) => set({ selected: selected.filter((x) => x.id !== id) });
   const dur = parseInt(st.dur, 10) || 2;
 
   // מצב הדגמה (?demo=1): מראה את תהליך השריון בלי תשלום אמיתי ובלי לגעת ביומן
@@ -84,11 +89,11 @@ export function Booking({ st, setSt }) {
   let dateLabel = 'גמיש – נתאם יחד';
   if (st.date) { const p = st.date.split('-'); dateLabel = `${p[2]}/${p[1]}/${p[0]}`; }
   const name = st.name.trim(), notes = st.notes.trim();
-  const svcLabel = SERVICES.find((x) => x[0] === st.service)[1];
+  const svcLabel = SERVICES.filter(([id]) => services.includes(id)).map(([, l]) => l).join(' + ');
   const durLabel = DURS.find((x) => x[0] === st.dur)[1];
 
-  const lines = ['היי יניר, אשמח לשריין סשן ב־SOL Production:', '', '• שירות: ' + svcLabel];
-  if (st.selected) lines.push(`• חבילה מהמחירון: ${st.selected.name} (${st.selected.price})`);
+  const lines = ['היי יניר, אשמח לשריין סשן ב־SOL Production:', '', (services.length > 1 ? '• שירותים: ' : '• שירות: ') + svcLabel];
+  if (selected.length) { lines.push('• מהמחירון:'); selected.forEach((x) => lines.push(`   – ${x.name} (${x.price})`)); }
   if (isReh) {
     lines.push('• הרכב: ' + st.band);
     lines.push('• הקלטת ערוצים מלאה (Multi-Track): ' + (st.rec ? 'כן' : 'לא'));
@@ -105,7 +110,7 @@ export function Booking({ st, setSt }) {
   const showQuote = TERMS.approved || demo;
   const openQuote = () => {
     const data = {
-      svcLabel, selected: st.selected, date: st.date, time: showHours ? time : '', dur: String(dur), durLabel: showHours ? durLabel : '',
+      svcLabel, selected, date: st.date, time: showHours ? time : '', dur: String(dur), durLabel: showHours ? durLabel : '',
       band: isReh ? st.band : '', rec: isReh && st.rec, isReh, name, phone: (st.phone || '').trim(), email: (st.email || '').trim(), notes, demo,
     };
     window.location.href = '/quote#q=' + encodeURIComponent(JSON.stringify(data));
@@ -130,7 +135,7 @@ export function Booking({ st, setSt }) {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          serviceLabel: svcLabel, selected: st.selected ? `${st.selected.name} (${st.selected.price})` : '',
+          serviceLabel: svcLabel, selected: selected.map((x) => `${x.name} (${x.price})`).join(' · '),
           date: st.date, time, dur, name, phone: st.phone, email: st.email, notes,
           band: isReh ? st.band : '', rec: isReh && st.rec,
         }),
@@ -185,9 +190,9 @@ export function Booking({ st, setSt }) {
       <div className="bk">
         <form className="glass" noValidate onSubmit={(e) => { e.preventDefault(); if (paid) pay(); }}>
           <fieldset>
-            <legend className="lbl">1 · איזה שירות?</legend>
+            <legend className="lbl">1 · מה תרצו? (אפשר לבחור כמה)</legend>
             <div className="opts scroll-x">
-              {SERVICES.map(([id, label]) => pill(st.service === id, () => set({ service: id }), label, id))}
+              {SERVICES.map(([id, label]) => pill(services.includes(id), () => toggleSvc(id), label, id))}
             </div>
           </fieldset>
 
@@ -262,10 +267,15 @@ export function Booking({ st, setSt }) {
         </form>
 
         <aside className="glass" aria-labelledby="pv-title">
-          {st.selected && (
-            <div className="selbox">
-              <span style={{ fontSize: 14 }}><span style={{ color: 'var(--muted)' }}>מהמחירון:</span> {st.selected.name + ' · ' + st.selected.price}</span>
-              <button type="button" className="icon-btn" aria-label="ביטול החבילה שנבחרה" onClick={() => set({ selected: null })}><IconClose /></button>
+          {selected.length > 0 && (
+            <div className="sel-list">
+              <span className="lbl" style={{ margin: 0 }}>מהמחירון ({selected.length})</span>
+              {selected.map((x) => (
+                <div key={x.id} className="selbox">
+                  <span style={{ fontSize: 14 }}>{x.name + ' · ' + x.price}</span>
+                  <button type="button" className="icon-btn" aria-label={'הסרת ' + x.name} onClick={() => removeSel(x.id)}><IconClose /></button>
+                </div>
+              ))}
             </div>
           )}
 
@@ -273,7 +283,7 @@ export function Booking({ st, setSt }) {
             <>
               <h3 id="pv-title" className="d" style={{ margin: 0, fontSize: 22 }}>סיכום ושריון</h3>
               <ul className="ticks" style={{ fontSize: 15 }}>
-                <li>{svcLabel}</li>
+                {SERVICES.filter(([id]) => services.includes(id)).map(([id, l]) => <li key={id}>{l}</li>)}
                 <li>{st.date ? `${dateLabel}${time ? ' · ' + time : ''} · ${durLabel}` : 'תאריך — עוד לא נבחר'}</li>
                 <li>{name || 'שם — עוד לא הוזן'}</li>
               </ul>
@@ -292,7 +302,7 @@ export function Booking({ st, setSt }) {
             <>
               <h3 id="pv-title" className="d" style={{ margin: 0, fontSize: 22 }}>סיכום ההזמנה</h3>
               <ul className="ticks" style={{ fontSize: 15 }} aria-live="polite">
-                <li>{svcLabel}</li>
+                {SERVICES.filter(([id]) => services.includes(id)).map(([id, l]) => <li key={id}>{l}</li>)}
                 <li>{dateLabel}{showHours ? ` · ${time} · ${durLabel}` : ''}</li>
                 {isReh && <li>{st.band} · הקלטת ערוצים: {st.rec ? 'כן' : 'לא'}</li>}
                 <li>{name || 'שם — עוד לא הוזן'}</li>

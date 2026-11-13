@@ -526,3 +526,6 @@ footer{background:#090c1e;border-top-color:var(--line-soft)}
   .q-block{break-inside:avoid}
   .sig-img{border-color:#ccc !important}
 }
+/* multi-select: chosen packages list + "added" button */
+.sel-list{display:flex;flex-direction:column;gap:8px}
+.in-order{border-color:var(--violet-2) !important;color:#efe3ff !important;background:rgba(168,85,247,.16) !important}

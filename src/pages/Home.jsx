@@ -15,7 +15,7 @@ const QUICK = [
   { label: 'קליפים', pick: { service: 'clip' } },
 ];
 
-const INITIAL = { service: 'rehearsal', band: '2–4 נגנים', rec: true, dur: '3', time: '19:00', selected: null, date: '', name: '', phone: '', email: '', notes: '' };
+const INITIAL = { services: ['rehearsal'], band: '2–4 נגנים', rec: true, dur: '3', time: '19:00', selected: [], date: '', name: '', phone: '', email: '', notes: '' };
 
 const WAVE = Array.from({ length: 48 }, (_, i) => 25 + ((i * 13 + 7) % 75));
 
@@ -26,11 +26,24 @@ export default function Home() {
   const [mode, setMode] = useState('studio');
 
   /* בחירה מהמחירון / מכפתורי הזמנה מהירה → ממלא את טופס ההזמנה */
-  const pick = useCallback(({ id, service }) => {
+  /* אפשר לבחור כמה דברים: כל בחירה מוסיפה להזמנה (ובמחירון לחיצה נוספת מורידה) */
+  const pick = useCallback(({ id, service, toggle }) => {
     setBk((s) => {
+      const addSvc = (list, sv) => (sv && !list.includes(sv) ? [...list, sv] : list);
       const it = id && ALL_ITEMS.find((x) => x.id === id);
-      if (it) return { ...s, selected: { id: it.id, name: it.name, price: priceText(it) }, service: it.service || s.service, rec: it.rec ? true : s.rec };
-      return service ? { ...s, service, selected: null } : s;
+      if (it) {
+        const has = s.selected.some((x) => x.id === it.id);
+        if (has && toggle) {
+          const selected = s.selected.filter((x) => x.id !== it.id);
+          // מורידים גם את השירות שהחבילה הוסיפה — אם אף חבילה אחרת לא צריכה אותו ונשאר לפחות שירות אחד
+          const stillNeeded = selected.some((x) => (ALL_ITEMS.find((y) => y.id === x.id) || {}).service === it.service);
+          const services = !stillNeeded && s.services.length > 1 ? s.services.filter((v) => v !== it.service) : s.services;
+          return { ...s, selected, services };
+        }
+        if (has) return s;
+        return { ...s, selected: [...s.selected, { id: it.id, name: it.name, price: priceText(it) }], services: addSvc(s.services, it.service), rec: it.rec ? true : s.rec };
+      }
+      return service ? { ...s, services: addSvc(s.services, service) } : s;
     });
   }, []);
 
@@ -180,7 +193,7 @@ export default function Home() {
           </div>
         </section>
 
-        <Pricing selectedId={bk.selected?.id} onPick={pick} />
+        <Pricing selectedIds={bk.selected.map((x) => x.id)} onPick={pick} />
         <Booking st={bk} setSt={setBk} />
         <Faq title="שאלות נפוצות על הקלטה באולפן" items={HOME_FAQ} />
         <Location

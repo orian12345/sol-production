@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { PRICING } from '../data.js';
 
 /* כל הקטגוריות נמצאות ב-HTML (גם המוסתרות) — כך גוגל רואה את כל המחירון */
-export function Pricing({ selectedId, onPick }) {
+export function Pricing({ selectedIds = [], onPick }) {
   const [cat, setCat] = useState(PRICING[0].id);
   const tabRefs = useRef([]);
 
@@ -20,7 +20,7 @@ export function Pricing({ selectedId, onPick }) {
       <div className="sec-head">
         <span className="chip">מחירון</span>
         <h2 id="pricing-title" className="d h2">מחירון אולפן ההקלטות SOL Production</h2>
-        <p className="lead">בוחרים שירות, לוחצים "בחרו להזמנה" — והפרטים עוברים ישר להזמנה בוואטסאפ.</p>
+        <p className="lead">אפשר להוסיף כמה שירותים לאותה הזמנה — למשל חדר חזרות + הקלטה. הכול מופיע בטופס ההזמנה למטה.</p>
       </div>
       <div className="tabs scroll-x" role="tablist" aria-label="קטגוריות מחירון">
         {PRICING.map((c, i) => (
@@ -34,7 +34,7 @@ export function Pricing({ selectedId, onPick }) {
       {PRICING.map((c) => (
         <div key={c.id} className="panel pgrid swipe" id={'p-' + c.id} role="tabpanel" aria-labelledby={'tab-' + c.id} hidden={cat !== c.id}>
           {c.items.map((it) => (
-            <article key={it.id} className={'glass lift pcard' + (selectedId === it.id ? ' sel' : '')}>
+            <article key={it.id} className={'glass lift pcard' + (selectedIds.includes(it.id) ? ' sel' : '')}>
               {it.badge && <span className="chip badge">{it.badge}</span>}
               <h3>{it.name}</h3>
               <p>{it.desc}</p>
@@ -45,7 +45,9 @@ export function Pricing({ selectedId, onPick }) {
               </div>
               {it.note && <div className="note">{it.note}</div>}
               {c.perk && <div className="perk"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 14v-2a9 9 0 0 1 18 0v2" /><rect x="2" y="14" width="5" height="7" rx="2" /><rect x="17" y="14" width="5" height="7" rx="2" /></svg>{c.perk}</div>}
-              <a className="btn btn-main btn-sm" href="#booking" aria-label={'בחירת ' + it.name + ' להזמנה'} onClick={() => onPick({ id: it.id })}>בחרו להזמנה</a>
+              {selectedIds.includes(it.id)
+                ? <button type="button" className="btn btn-glass btn-sm in-order" aria-pressed="true" aria-label={'הסרת ' + it.name + ' מההזמנה'} onClick={() => onPick({ id: it.id, toggle: true })}>✓ נוסף להזמנה · הסרה</button>
+                : <button type="button" className="btn btn-main btn-sm" aria-pressed="false" aria-label={'הוספת ' + it.name + ' להזמנה'} onClick={() => onPick({ id: it.id, toggle: true })}>הוספה להזמנה</button>}
             </article>
           ))}
         </div>

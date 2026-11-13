@@ -236,9 +236,9 @@ async function saveAgreement(request, env) {
   const clip = (v, n) => String(v ?? '').slice(0, n);
   const q = b.quote;
   const quote = {
-    svcLabel: clip(q.svcLabel, 120), date: clip(q.date, 10), time: clip(q.time, 5), dur: clip(q.dur, 3), durLabel: clip(q.durLabel, 20),
+    svcLabel: clip(q.svcLabel, 300), date: clip(q.date, 10), time: clip(q.time, 5), dur: clip(q.dur, 3), durLabel: clip(q.durLabel, 20),
     band: clip(q.band, 40), rec: !!q.rec, isReh: !!q.isReh, name: clip(q.name, 100), phone: clip(q.phone, 30), email: clip(q.email, 120), notes: clip(q.notes, 500),
-    selected: q.selected ? { id: clip(q.selected.id, 40), name: clip(q.selected.name, 120), price: clip(q.selected.price, 60) } : null,
+    selected: (Array.isArray(q.selected) ? q.selected : q.selected ? [q.selected] : []).slice(0, 20).map((x) => ({ id: clip(x && x.id, 40), name: clip(x && x.name, 120), price: clip(x && x.price, 60) })),
   };
   const terms = b.terms.slice(0, 20).map((s) => ({ title: clip(s.title, 120), items: (Array.isArray(s.items) ? s.items : []).slice(0, 20).map((t) => clip(t, 1000)) }));
   const id = crypto.randomUUID();

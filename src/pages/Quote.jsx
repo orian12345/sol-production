@@ -15,18 +15,25 @@ const ils = (n) => '₪' + n.toLocaleString('en-US');
 const fmtDate = (d) => { if (!d) return 'גמיש – נתאם יחד'; const p = d.split('-'); return `${p[2]}/${p[1]}/${p[0]}`; };
 const fmtStamp = (ms) => new Date(ms).toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem', dateStyle: 'short', timeStyle: 'short' });
 
+const asList = (sel) => (Array.isArray(sel) ? sel : sel ? [sel] : []);
+
+// שורה לכל פריט שנבחר מהמחירון; סה"כ רק לפריטים במחיר קבוע
 function quoteLines(q) {
-  const it = q.selected && ALL_ITEMS.find((x) => x.id === q.selected.id);
-  if (!it) return { lines: [{ desc: q.svcLabel, qty: '', unit: '', total: 'ייקבע מול יניר' }], total: null };
-  if (it.quote) return { lines: [{ desc: it.name, qty: '', unit: '', total: 'לפי הצעת מחיר אישית' }], total: null };
-  if (/–/.test(it.price)) return { lines: [{ desc: it.name, qty: '', unit: it.price, total: it.price }], total: null };
-  const unitPrice = num(it.price);
-  const hourly = it.unit === 'לשעה';
-  const qty = hourly ? (parseInt(q.dur, 10) || 1) : 1;
-  return {
-    lines: [{ desc: it.name + (it.desc ? ' – ' + it.desc : ''), qty: hourly ? `${qty} שעות` : '1', unit: ils(unitPrice) + (it.unit ? ' ' + it.unit : ''), total: ils(unitPrice * qty) }],
-    total: unitPrice * qty,
-  };
+  const picked = asList(q.selected);
+  if (!picked.length) return { lines: [{ desc: q.svcLabel, qty: '', unit: '', total: 'ייקבע מול יניר' }], total: null, open: true };
+  let total = 0, open = false;
+  const lines = picked.map((sel) => {
+    const it = ALL_ITEMS.find((x) => x.id === sel.id);
+    if (!it) { open = true; return { desc: sel.name, qty: '', unit: sel.price || '', total: 'ייקבע מול יניר' }; }
+    if (it.quote) { open = true; return { desc: it.name, qty: '', unit: '', total: 'לפי הצעת מחיר אישית' }; }
+    if (/–/.test(it.price)) { open = true; return { desc: it.name, qty: '', unit: it.price, total: it.price }; }
+    const unitPrice = num(it.price);
+    const hourly = it.unit === 'לשעה';
+    const qty = hourly ? (parseInt(q.dur, 10) || 1) : 1;
+    total += unitPrice * qty;
+    return { desc: it.name + (it.desc ? ' – ' + it.desc : ''), qty: hourly ? qty + ' שעות' : '1', unit: ils(unitPrice) + (it.unit ? ' ' + it.unit : ''), total: ils(unitPrice * qty) };
+  });
+  return { lines, total: total > 0 ? total : null, open };
 }
 
 function SignaturePad({ onChange }) {
@@ -110,7 +117,7 @@ export default function Quote() {
     );
   }
 
-  const { lines, total } = quoteLines(q);
+  const { lines, total, open } = quoteLines(q);
   const validUntil = new Date(meta.issued + TERMS.quote.validDays * 86400000).toLocaleDateString('he-IL', { timeZone: 'Asia/Jerusalem' });
   const termsVersion = signed ? signed.termsVersion : TERMS.version;
   const canSign = agree && signer.trim().length >= 2 && sig;
@@ -138,7 +145,7 @@ export default function Quote() {
   const link = signed && signed.id ? `${window.location.origin}/quote?a=${signed.id}` : '';
   const waMsg = [
     `היי יניר, אישרתי את הצעת המחיר ותקנון האולפן (${meta.number}).`,
-    `שירות: ${q.selected ? q.selected.name : q.svcLabel}`,
+    `שירות: ${asList(q.selected).length ? asList(q.selected).map((x) => x.name).join(' + ') : q.svcLabel}`,
     `תאריך: ${fmtDate(q.date)}${q.time ? ' ' + q.time : ''}`,
     `שם: ${signed ? signed.signer : signer}`,
     link ? `העותק החתום: ${link}` : 'שמרתי עותק חתום כ-PDF.',
@@ -188,10 +195,11 @@ export default function Quote() {
               <tbody>
                 {lines.map((l, i) => <tr key={i}><td>{l.desc}</td><td>{l.qty}</td><td>{l.unit}</td><td>{l.total}</td></tr>)}
               </tbody>
-              {total != null && <tfoot><tr><td colSpan="3">סה״כ לתשלום</td><td>{ils(total)}</td></tr></tfoot>}
+              {total != null && <tfoot><tr><td colSpan="3">{open ? 'סה״כ לפריטים במחיר קבוע' : 'סה״כ לתשלום'}</td><td>{ils(total)}</td></tr></tfoot>}
             </table>
             {TERMS.quote.vatNote && <p className="q-note">{TERMS.quote.vatNote}</p>}
-            {!q.selected && <p className="q-note">לא נבחרה חבילה מהמחירון – המחיר הסופי ייקבע מול יניר סול.</p>}
+            {!asList(q.selected).length && <p className="q-note">לא נבחרה חבילה מהמחירון – המחיר הסופי ייקבע מול יניר סול.</p>}
+            {asList(q.selected).length > 0 && open && <p className="q-note">חלק מהפריטים במחיר לפי הצעה אישית – הסכום הסופי ייקבע מול יניר סול.</p>}
           </section>
 
           <section className="q-block">
