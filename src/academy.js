@@ -3,6 +3,7 @@
    כאן מעדכנים מורים, תיאורים, ציוד ומחירים. אין צורך לגעת בעיצוב.
    photo = תמונה קטנה של המורה (בתיקייה public/academy). בלי תמונה מוצגת האות הראשונה של השם.
    price = מחיר החבילה | lessons = כמה שיעורים | recommended = החבילה המומלצת
+   intro = שיעור היכרות חד פעמי (לא נכלל בחישוב החיסכון)
    (המחיר לשיעור והחיסכון מחושבים אוטומטית מול "שיעור בודד")
    ===================================================================== */
 export const academyData = [
@@ -15,6 +16,7 @@ export const academyData = [
     stage: 'מתופף פעיל בשורה הראשונה, הופיע והקליט עם דודו אהרון, ישי לוי, עופר לוי ועוד.',
     gear: 'אין צורך להביא ציוד – השיעורים מתקיימים על סט תופים אקוסטי מקצועי שנמצא באולפן (מומלץ להגיע עם זוג מקלות אישי).',
     tiers: [
+      { id: 'intro', label: 'שיעור היכרות', note: 'חד פעמי', lessons: 1, price: 150, intro: true },
       { id: 'single', label: 'שיעור בודד', note: '60 דקות', lessons: 1, price: 235 },
       { id: 'pack4', label: 'כרטיסיית 4 שיעורים', note: 'חודשית', lessons: 4, price: 860, recommended: true },
       { id: 'pack10', label: 'כרטיסיית 10 שיעורים', note: '', lessons: 10, price: 2050 },
@@ -24,9 +26,12 @@ export const academyData = [
     id: 'bass',
     instrument: 'גיטרה בס',
     teacher: 'אדם רונן',
+    photo: '/academy/adam.webp',
+    photoPos: '45% 35%',
     stage: 'בסיסט מוביל מהבמות המרכזיות, מופיע לצד ששון שאולוב ואמנים מובילים.',
     gear: 'יש להגיע לשיעור עם גיטרה בס אישית (מגבר בס מקצועי וכבלים מחכים לכם באולפן).',
     tiers: [
+      { id: 'intro', label: 'שיעור היכרות', note: 'חד פעמי', lessons: 1, price: 150, intro: true },
       { id: 'single', label: 'שיעור בודד', note: '60 דקות', lessons: 1, price: 195 },
       { id: 'pack4', label: 'כרטיסיית 4 שיעורים', note: 'חודשית', lessons: 4, price: 720, recommended: true },
       { id: 'pack10', label: 'כרטיסיית 10 שיעורים', note: '', lessons: 10, price: 1700 },
@@ -41,6 +46,7 @@ export const academyData = [
     stage: 'גיטריסט מהבמות המרכזיות בארץ, בעל ידע תיאורטי ומעשי עשיר (פופ, מזרחית, רוק, ג\'אז ועוד).',
     gear: 'יש להגיע לשיעור עם גיטרה אישית (חשמלית או אקוסטית – מגברים, אפקטים וכבלים זמינים באולפן).',
     tiers: [
+      { id: 'intro', label: 'שיעור היכרות', note: 'חד פעמי', lessons: 1, price: 150, intro: true },
       { id: 'single', label: 'שיעור בודד', note: '60 דקות', lessons: 1, price: 215 },
       { id: 'pack4', label: 'כרטיסיית 4 שיעורים', note: 'חודשית', lessons: 4, price: 780, recommended: true },
       { id: 'pack10', label: 'כרטיסיית 10 שיעורים', note: '', lessons: 10, price: 1850 },

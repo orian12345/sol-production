@@ -601,3 +601,7 @@ footer{background:#090c1e;border-top-color:var(--line-soft)}
 .ac-photo{flex:none;width:76px;height:76px;border-radius:50%;object-fit:cover;object-position:50% 40%;border:2px solid #D4AF37;box-shadow:0 0 0 4px rgba(212,175,55,.12),0 8px 20px -8px rgba(0,0,0,.8);background:#1a1b20}
 .ac-photo-empty{display:flex;align-items:center;justify-content:center;font:800 28px "Heebo";color:#D4AF37;background:radial-gradient(circle at 30% 30%,#2a2614,#141412)}
 @media (max-width:700px){.ac-photo{width:64px;height:64px}}
+/* academy: one-time intro lesson */
+.ac-tier.intro{border-color:rgba(234,179,8,.35);background:rgba(234,179,8,.05)}
+.ac-tier.intro .ac-tier-label::after{content:"מחיר היכרות";margin-inline-start:8px;font:800 11px "Heebo";color:#0b0a06;background:linear-gradient(100deg,#e9c95a,#EAB308);padding:2px 7px;border-radius:6px;vertical-align:2px}
+.ac-tier.intro .ac-tier-label::after{display:inline-block;white-space:nowrap}

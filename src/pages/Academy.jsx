@@ -10,7 +10,7 @@ function TeacherCard({ t }) {
   const recommended = t.tiers.find((x) => x.recommended) || t.tiers[0];
   const [tierId, setTierId] = useState(recommended.id);
   const tier = t.tiers.find((x) => x.id === tierId);
-  const single = t.tiers.find((x) => x.lessons === 1) || t.tiers[0];
+  const single = t.tiers.find((x) => x.id === 'single') || t.tiers.find((x) => x.lessons === 1 && !x.intro) || t.tiers[0];
   const perLesson = Math.round(tier.price / tier.lessons);
   const saving = single.price * tier.lessons - tier.price;
   const groupId = 'tier-' + t.id;
@@ -49,10 +49,11 @@ function TeacherCard({ t }) {
           const per = Math.round(x.price / x.lessons);
           const save = single.price * x.lessons - x.price;
           return (
-            <label key={x.id} className={'ac-tier' + (x.id === tierId ? ' on' : '') + (x.recommended ? ' rec' : '')}>
+            <label key={x.id} className={'ac-tier' + (x.id === tierId ? ' on' : '') + (x.recommended ? ' rec' : '') + (x.intro ? ' intro' : '')}>
               <input type="radio" name={groupId} value={x.id} checked={x.id === tierId} onChange={() => setTierId(x.id)} />
               <span className="ac-tier-main">
                 <span className="ac-tier-label">{x.label}{x.note ? ` (${x.note})` : ''}{x.recommended ? ' 🔥' : ''}</span>
+                {x.intro && <span className="ac-tier-sub">שיעור ראשון להיכרות – פעם אחת לכל תלמיד</span>}
                 {x.lessons > 1 && <span className="ac-tier-sub">{ils(per)} לשיעור · חיסכון של {ils(save)}</span>}
               </span>
               <span className="ac-tier-price">{ils(x.price)}</span>
@@ -64,7 +65,7 @@ function TeacherCard({ t }) {
       <div className="ac-total" aria-live="polite">
         <span className="ac-total-price">{ils(tier.price)}</span>
         <span className="ac-total-sub">
-          {tier.lessons > 1 ? `${tier.lessons} שיעורים · ${ils(perLesson)} לשיעור · חוסכים ${ils(saving)}` : 'שיעור אחד · 60 דקות'}
+          {tier.intro ? 'שיעור היכרות חד פעמי – פעם אחת לכל תלמיד' : tier.lessons > 1 ? `${tier.lessons} שיעורים · ${ils(perLesson)} לשיעור · חוסכים ${ils(saving)}` : 'שיעור אחד · 60 דקות'}
         </span>
       </div>
 
