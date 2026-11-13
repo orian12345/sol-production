@@ -613,3 +613,25 @@ footer{background:#090c1e;border-top-color:var(--line-soft)}
 @media (max-width:700px){.about-flex{gap:14px;align-items:flex-start}.about-photo{width:104px}}
 @media (max-width:700px){.about-flex{flex-direction:column;align-items:stretch;gap:12px}.about-photo{width:100%;aspect-ratio:16/10;object-position:50% 52%}}
 .ac-teaser-wrap{padding-top:18px}.ac-teaser-wrap .ac-teaser{margin:0}@media (max-width:700px){.ac-teaser-wrap{padding-top:12px}}
+/* academy: deposit form + result notes */
+.ac-cta{border:0;cursor:pointer;width:100%}
+.ac-cta:disabled{opacity:.7;cursor:wait}
+.ac-cta-2{background:transparent !important;color:#f0d77a !important;border:1px solid rgba(212,175,55,.5) !important;box-shadow:none !important;min-height:48px}
+.ac-cta-2:hover{background:rgba(212,175,55,.08) !important}
+.ac-pay{display:flex;flex-direction:column;gap:8px;padding:16px;border-radius:16px;border:1px solid rgba(212,175,55,.45);background:rgba(212,175,55,.06)}
+.ac-pay-head{position:relative;display:flex;flex-direction:column;gap:2px;padding-inline-end:44px;margin-bottom:4px}
+.ac-pay-head strong{font:800 18px "Heebo";color:#f0d77a}
+.ac-pay-head span{font-size:13px;color:#c9c2ad}
+.ac-x{position:absolute;top:0;inset-inline-end:0;width:40px;height:40px;border-radius:50%;border:1px solid rgba(212,175,55,.4);background:transparent;color:#f0d77a;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.ac-lbl{font:700 13px "Heebo";color:#c9c2ad}
+.ac-field{width:100%;min-height:46px;padding:10px 14px;border-radius:12px;border:1px solid #3a372c;background:#0c0c0f;color:#f5f2e8;font:400 16px "Heebo";color-scheme:dark}
+.ac-field:focus{outline:none;border-color:#D4AF37;box-shadow:0 0 0 3px rgba(212,175,55,.25)}
+.ac-err{margin:0;color:#fca5a5;font-size:14px}
+.ac-fine{margin:4px 0 0;font-size:12.5px;line-height:1.55;color:#b9b3a3;text-align:center}
+.ac-fine a{color:#EAB308}
+.ac-note{position:relative;display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:16px 20px;padding-inline-end:60px;border-radius:16px;margin-bottom:22px;font-size:16px}
+.ac-note strong{font:800 19px "Heebo"}
+.ac-note .ac-x{top:50%;transform:translateY(-50%);inset-inline-end:12px}
+.ac-note.ok{background:rgba(212,175,55,.12);border:1px solid #D4AF37;color:#f5ecc8}
+.ac-note.bad{background:#2a1214;border:1px solid #7a2f36;color:#fde2e4}
+.ac-note.demo{background:rgba(212,175,55,.06);border:1px dashed rgba(212,175,55,.6);color:#e9e2c8}

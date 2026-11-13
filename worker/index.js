@@ -33,6 +33,8 @@ export default {
       if (url.pathname === '/api/availability' && request.method === 'GET') return await availability(url, env);
       if (url.pathname === '/api/book' && request.method === 'POST') return await book(request, url, env);
       if (url.pathname === '/api/morning-notify' && request.method === 'POST') return await notify(request, url, env);
+      if (url.pathname === '/api/academy-pay' && request.method === 'POST') return await academyPay(request, url, env);
+      if (url.pathname === '/api/academy-notify' && request.method === 'POST') return await academyNotify(request, url, env);
       if (url.pathname === '/api/agreement' && request.method === 'POST') return await saveAgreement(request, env);
       if (url.pathname.startsWith('/api/agreement/') && request.method === 'GET') return await getAgreement(url, env);
       if (url.pathname.startsWith('/api/')) return json({ error: 'not_found' }, 404);
@@ -93,7 +95,7 @@ const overlaps = (ranges, s, e) => ranges.some(([a, b]) => s < b && a < e);
 
 async function availability(url, env) {
   const deposit = Number(env.DEPOSIT || 0);
-  const base = { configured: configured(env) && deposit > 0, deposit, policy: env.CANCEL_POLICY || '' };
+  const base = { configured: configured(env) && deposit > 0, deposit, policy: env.CANCEL_POLICY || '', academy: academyCfg(env) };
   if (!base.configured) return json(base);
   const date = url.searchParams.get('date');
   const dur = Math.min(8, Math.max(1, parseInt(url.searchParams.get('dur'), 10) || 2));
@@ -216,6 +218,57 @@ async function notify(request, url, env) {
   bk.notifyPayload = payload;
   await env.BOOKINGS.put('booking:' + id, JSON.stringify(bk), { expirationTtl: 60 * 60 * 24 * 90 });
   await env.BOOKINGS.delete('hold:' + bk.date + ':' + id);
+  return json({ ok: true });
+}
+
+/* ---------- SOL Academy: מקדמה לשריון מקום בשיעורי נגינה ---------- */
+// לא צריך יומן — רק Morning. המקדמה = ACADEMY_DEPOSIT (או מחיר החבילה אם הוא נמוך יותר, למשל שיעור היכרות).
+function academyCfg(env) {
+  const deposit = Number(env.ACADEMY_DEPOSIT || 0);
+  return { on: !!(env.MORNING_CLIENT_ID && env.MORNING_CLIENT_SECRET && env.BOOKINGS) && deposit > 0, deposit };
+}
+
+async function academyPay(request, url, env) {
+  const cfg = academyCfg(env);
+  if (!cfg.on) return json({ error: 'not_configured' }, 503);
+  const b = await request.json().catch(() => ({}));
+  const clip = (v, n) => String(v ?? '').trim().slice(0, n);
+  const name = clip(b.name, 80), email = clip(b.email, 120);
+  const phone = clip(b.phone, 20).replace(/[^\d+\-\s]/g, '');
+  if (!name || phone.replace(/\D/g, '').length < 9) return json({ error: 'missing_contact' }, 400);
+  const teacher = clip(b.teacher, 60), instrument = clip(b.instrument, 60), tier = clip(b.tier, 80);
+  const tierPrice = Math.max(0, Number(b.price) || 0);
+  if (!teacher || !tier || !tierPrice) return json({ error: 'bad_request' }, 400);
+  const amount = Math.min(cfg.deposit, tierPrice);
+  const id = crypto.randomUUID(), secret = crypto.randomUUID().replace(/-/g, '');
+  const rec = { id, secret, status: 'pending', created: Date.now(), name, phone, email, teacher, instrument, tier, tierPrice, amount };
+  await env.BOOKINGS.put('academy:' + id, JSON.stringify(rec), { expirationTtl: 60 * 60 * 24 * 90 });
+  const site = (env.SITE_URL || url.origin).replace(/\/$/, '');
+  const balance = tierPrice - amount;
+  const form = await morning(env, '/payments/form', {
+    description: `מקדמה – SOL Academy: ${instrument} עם ${teacher} (${tier})`,
+    type: Number(env.MORNING_DOC_TYPE || 400), amount, currency: 'ILS', vatType: 0, lang: 'he', maxPayments: 1,
+    client: { name, phone, mobile: phone, emails: email ? [email] : undefined, add: true },
+    remarks: `${tier} · מחיר החבילה ₪${tierPrice}` + (balance > 0 ? ` · יתרה לתשלום ₪${balance}` : ''),
+    successUrl: `${site}/academy?paid=1`,
+    failureUrl: `${site}/academy?payfail=1`,
+    notifyUrl: `${url.origin}/api/academy-notify?id=${id}&k=${secret}`,
+    custom: 'academy:' + id,
+  });
+  if (!form || !form.url) { console.error('academy form failed', JSON.stringify(form)); return json({ error: 'payment_unavailable' }, 502); }
+  return json({ url: form.url });
+}
+
+async function academyNotify(request, url, env) {
+  const id = url.searchParams.get('id') || '', key = url.searchParams.get('k') || '';
+  const raw = await env.BOOKINGS.get('academy:' + id);
+  if (!raw) return json({ ok: false }, 404);
+  const rec = JSON.parse(raw);
+  if (!key || key !== rec.secret) return json({ ok: false }, 403);
+  if (rec.status !== 'paid') {
+    rec.status = 'paid'; rec.paidAt = Date.now();
+    await env.BOOKINGS.put('academy:' + id, JSON.stringify(rec), { expirationTtl: 60 * 60 * 24 * 365 });
+  }
   return json({ ok: true });
 }
 
