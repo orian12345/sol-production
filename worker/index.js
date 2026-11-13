@@ -33,6 +33,7 @@ export default {
       if (url.pathname === '/api/availability' && request.method === 'GET') return await availability(url, env);
       if (url.pathname === '/api/book' && request.method === 'POST') return await book(request, url, env);
       if (url.pathname === '/api/morning-notify' && request.method === 'POST') return await notify(request, url, env);
+      if (url.pathname === '/api/academy-slots' && request.method === 'GET') return await academySlots(url, env);
       if (url.pathname === '/api/academy-pay' && request.method === 'POST') return await academyPay(request, url, env);
       if (url.pathname === '/api/academy-notify' && request.method === 'POST') return await academyNotify(request, url, env);
       if (url.pathname === '/api/agreement' && request.method === 'POST') return await saveAgreement(request, env);
@@ -223,9 +224,27 @@ async function notify(request, url, env) {
 
 /* ---------- SOL Academy: מקדמה לשריון מקום בשיעורי נגינה ---------- */
 // לא צריך יומן — רק Morning. המקדמה = ACADEMY_DEPOSIT (או מחיר החבילה אם הוא נמוך יותר, למשל שיעור היכרות).
+// השיעורים מתקיימים באולפן → הזמינות לפי אותו יומן של האולפן (יומן גוגל של יניר)
+const LESSON_FROM = 14, LESSON_LAST = 22; // שעת התחלה ראשונה / אחרונה, שיעור של שעה
+const calendarOn = (env) => !!(env.GOOGLE_SA_EMAIL && env.GOOGLE_SA_KEY && env.GOOGLE_CALENDAR_ID && env.BOOKINGS);
+
 function academyCfg(env) {
   const deposit = Number(env.ACADEMY_DEPOSIT || 0);
-  return { on: !!(env.MORNING_CLIENT_ID && env.MORNING_CLIENT_SECRET && env.BOOKINGS) && deposit > 0, deposit };
+  return { on: configured(env) && deposit > 0, deposit, calendar: calendarOn(env) };
+}
+
+async function academySlots(url, env) {
+  if (!calendarOn(env)) return json({ calendar: false });
+  const date = url.searchParams.get('date');
+  if (!validDate(date)) return json({ calendar: true, slots: [] });
+  const ranges = await busyRanges(env, date);
+  const now = Date.now(), slots = [];
+  for (let h = LESSON_FROM; h <= LESSON_LAST; h++) {
+    const t = pad(h) + ':00';
+    const s = israelTime(date, t).getTime(), e = s + 3600 * 1000;
+    slots.push({ time: h + ':00', free: s > now + 3600 * 1000 && !overlaps(ranges, s, e) });
+  }
+  return json({ calendar: true, date, slots });
 }
 
 async function academyPay(request, url, env) {
@@ -242,14 +261,19 @@ async function academyPay(request, url, env) {
   // מועד מבוקש: שיעורים מ-14:00 עד 22:00 (התחלה), לא בעבר
   const date = clip(b.date, 10), time = clip(b.time, 5);
   const hour = parseInt(time, 10);
-  if (!validDate(date) || !/^\d{1,2}:00$/.test(time) || hour < 14 || hour > 22) return json({ error: 'missing_slot' }, 400);
-  if (israelTime(date, (hour < 10 ? '0' : '') + time).getTime() < Date.now()) return json({ error: 'missing_slot' }, 400);
+  if (!validDate(date) || !/^\d{1,2}:00$/.test(time) || hour < LESSON_FROM || hour > LESSON_LAST) return json({ error: 'missing_slot' }, 400);
+  const start = israelTime(date, pad(hour) + ':00').getTime(), end = start + 3600 * 1000;
+  if (start < Date.now() + 3600 * 1000) return json({ error: 'missing_slot' }, 400);
+  // לפי יומן האולפן: לא לאפשר שעה תפוסה
+  if (overlaps(await busyRanges(env, date), start, end)) return json({ error: 'slot_taken' }, 409);
   const [yy, mm, dd] = date.split('-');
   const when = `${dd}/${mm}/${yy} ${time}`;
   const amount = Math.min(cfg.deposit, tierPrice);
   const id = crypto.randomUUID(), secret = crypto.randomUUID().replace(/-/g, '');
-  const rec = { id, secret, status: 'pending', created: Date.now(), name, phone, email, teacher, instrument, tier, tierPrice, amount, date, time };
+  const rec = { id, secret, status: 'pending', created: Date.now(), name, phone, email, teacher, instrument, tier, tierPrice, amount, date, time, start, end };
   await env.BOOKINGS.put('academy:' + id, JSON.stringify(rec), { expirationTtl: 60 * 60 * 24 * 90 });
+  // נועלים את השעה ביומן בזמן שהלקוח משלם (אותו מנגנון כמו הזמנות האולפן)
+  await env.BOOKINGS.put('hold:' + date + ':' + id, JSON.stringify({ start, end }), { expirationTtl: HOLD_MINUTES * 60 });
   const site = (env.SITE_URL || url.origin).replace(/\/$/, '');
   const balance = tierPrice - amount;
   const form = await morning(env, '/payments/form', {
@@ -262,7 +286,11 @@ async function academyPay(request, url, env) {
     notifyUrl: `${url.origin}/api/academy-notify?id=${id}&k=${secret}`,
     custom: 'academy:' + id,
   });
-  if (!form || !form.url) { console.error('academy form failed', JSON.stringify(form)); return json({ error: 'payment_unavailable' }, 502); }
+  if (!form || !form.url) {
+    console.error('academy form failed', JSON.stringify(form));
+    await env.BOOKINGS.delete('hold:' + date + ':' + id);
+    return json({ error: 'payment_unavailable' }, 502);
+  }
   return json({ url: form.url });
 }
 
@@ -272,10 +300,35 @@ async function academyNotify(request, url, env) {
   if (!raw) return json({ ok: false }, 404);
   const rec = JSON.parse(raw);
   if (!key || key !== rec.secret) return json({ ok: false }, 403);
-  if (rec.status !== 'paid') {
-    rec.status = 'paid'; rec.paidAt = Date.now();
-    await env.BOOKINGS.put('academy:' + id, JSON.stringify(rec), { expirationTtl: 60 * 60 * 24 * 365 });
-  }
+  if (rec.status === 'paid') return json({ ok: true }); // הודעה כפולה — כבר טופל
+
+  // השיעור נכנס ליומן של האולפן
+  const others = (await busyRanges(env, rec.date)).filter(([a, b]) => !(a === rec.start && b === rec.end));
+  const clash = overlaps(others, rec.start, rec.end);
+  const token = await googleToken(env);
+  const ev = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(env.GOOGLE_CALENDAR_ID)}/events`, {
+    method: 'POST',
+    headers: { authorization: 'Bearer ' + token, 'content-type': 'application/json' },
+    body: JSON.stringify({
+      summary: `${clash ? '⚠ ' : ''}שיעור ${rec.instrument} – ${rec.teacher} – ${rec.name} (שולמה מקדמה)`,
+      description: [
+        'SOL Academy – שיעור נגינה מהאתר',
+        `תלמיד/ה: ${rec.name}`, `טלפון: ${rec.phone}`, rec.email && `מייל: ${rec.email}`,
+        `מורה: ${rec.teacher} · כלי: ${rec.instrument}`, `חבילה: ${rec.tier} (₪${rec.tierPrice})`,
+        `שולמה מקדמה: ₪${rec.amount}` + (rec.tierPrice > rec.amount ? ` · יתרה ₪${rec.tierPrice - rec.amount}` : ''),
+        clash && '⚠ שימו לב: יש חפיפה עם אירוע אחר ביומן',
+        `מזהה: ${rec.id}`,
+      ].filter(Boolean).join('\n'),
+      start: { dateTime: new Date(rec.start).toISOString(), timeZone: TZ },
+      end: { dateTime: new Date(rec.end).toISOString(), timeZone: TZ },
+      colorId: clash ? '11' : '5',
+    }),
+  });
+  if (!ev.ok) { console.error('academy calendar insert failed', ev.status, await ev.text()); return json({ ok: false }, 502); }
+
+  rec.status = 'paid'; rec.paidAt = Date.now();
+  await env.BOOKINGS.put('academy:' + id, JSON.stringify(rec), { expirationTtl: 60 * 60 * 24 * 365 });
+  await env.BOOKINGS.delete('hold:' + rec.date + ':' + id);
   return json({ ok: true });
 }
 

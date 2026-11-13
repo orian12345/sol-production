@@ -13,6 +13,7 @@ const todayIL = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/J
 
 const ERRORS = {
   missing_slot: 'בחרו תאריך ושעה לשיעור.',
+  slot_taken: 'השעה הזו נתפסה ביומן האולפן — בחרו שעה אחרת.',
   missing_contact: 'צריך למלא שם מלא ומספר טלפון תקין.',
   payment_unavailable: 'לא הצלחנו לפתוח את דף התשלום. נסו שוב או שלחו הודעה בוואטסאפ.',
 };
@@ -30,6 +31,23 @@ function TeacherCard({ t, pay, onDemoPaid }) {
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [minDate, setMinDate] = useState('');
+  // זמינות לפי יומן האולפן (כשהיומן מחובר): { '17:00': false, ... }
+  const [takenMap, setTakenMap] = useState(null);
+  const [checking, setChecking] = useState(false);
+  useEffect(() => {
+    if (!pay.calendar || !date) { setTakenMap(null); return; }
+    let live = true;
+    setChecking(true);
+    const done = (slots) => {
+      if (!live) return;
+      const m = {}; (slots || []).forEach((s) => { m[s.time] = !s.free; });
+      setTakenMap(m); setChecking(false);
+      setTime((cur) => (cur && m[cur] ? '' : cur));
+    };
+    if (pay.demo) { const tm = setTimeout(() => done(LESSON_TIMES.map((h) => ({ time: h, free: h !== '17:00' && h !== '18:00' }))), 300); return () => { live = false; clearTimeout(tm); }; }
+    fetch('/api/academy-slots?date=' + date).then((r) => (r.ok ? r.json() : null)).then((j) => done(j && j.slots)).catch(() => done([]));
+    return () => { live = false; };
+  }, [pay.calendar, pay.demo, date]);
   useEffect(() => setMinDate(todayIL()), []);
   const when = date ? fmtDate(date) + (time ? ' בשעה ' + time : '') : '';
   const [form, setForm] = useState(false);
@@ -67,6 +85,7 @@ function TeacherCard({ t, pay, onDemoPaid }) {
       const j = await r.json().catch(() => ({}));
       if (r.ok && j.url) { window.location.href = j.url; return; }
       setErr(ERRORS[j.error] || ERRORS.payment_unavailable);
+      if (j.error === 'slot_taken') { setTakenMap((m) => ({ ...(m || {}), [time]: true })); setTime(''); }
     } catch { setErr(ERRORS.payment_unavailable); }
     setBusy(false);
   };
@@ -120,10 +139,17 @@ function TeacherCard({ t, pay, onDemoPaid }) {
           <input className="ac-field" type="date" aria-label={'תאריך לשיעור עם ' + t.teacher} min={minDate || undefined} value={date} onChange={(e) => { setDate(e.target.value); setErr(''); }} />
           <select className="ac-field" aria-label={'שעה לשיעור עם ' + t.teacher} value={time} onChange={(e) => { setTime(e.target.value); setErr(''); }}>
             <option value="">שעה</option>
-            {LESSON_TIMES.map((h) => <option key={h} value={h}>{h}</option>)}
+            {LESSON_TIMES.map((h) => {
+              const taken = !!(takenMap && takenMap[h]);
+              return <option key={h} value={h} disabled={taken}>{taken ? h + ' · תפוס' : h}</option>;
+            })}
           </select>
         </div>
-        <span className="ac-when-note">שיעורים החל מ-14:00 · המועד סופי לאחר אישור המורה</span>
+        <span className="ac-when-note">
+          {checking ? 'בודקים ביומן האולפן…'
+              : takenMap ? 'מוצגות השעות הפנויות ביומן האולפן · שיעורים החל מ-14:00'
+            : 'שיעורים החל מ-14:00 · המועד סופי לאחר אישור המורה'}
+        </span>
       </fieldset>
 
       {pay.on && !form && (
@@ -159,17 +185,17 @@ function TeacherCard({ t, pay, onDemoPaid }) {
 }
 
 export default function Academy() {
-  const [pay, setPay] = useState({ on: false, deposit: 0, demo: false });
+  const [pay, setPay] = useState({ on: false, deposit: 0, demo: false, calendar: false });
   const [result, setResult] = useState('');
 
   useEffect(() => {
     const q = new URLSearchParams(window.location.search);
-    if (q.get('demo')) { setPay({ on: true, deposit: 100, demo: true }); return; }
+    if (q.get('demo')) { setPay({ on: true, deposit: 100, demo: true, calendar: true }); return; }
     if (q.get('paid')) setResult('paid');
     else if (q.get('payfail')) setResult('failed');
     if (q.get('paid') || q.get('payfail')) window.history.replaceState(null, '', '/academy');
     fetch('/api/availability').then((r) => (r.ok ? r.json() : null)).then((j) => {
-      if (j && j.academy && j.academy.on) setPay({ on: true, deposit: j.academy.deposit, demo: false });
+      if (j && j.academy) setPay({ on: !!j.academy.on, deposit: j.academy.deposit || 0, demo: false, calendar: !!j.academy.calendar });
     }).catch(() => {});
   }, []);
 
@@ -189,7 +215,7 @@ export default function Academy() {
           <p className="ac-where">{ADDRESS} · שיעורים אחד-על-אחד · 60 דקות</p>
 
           {pay.demo && (
-            <div className="ac-note demo" role="note"><strong>מצב הדגמה</strong><span>כך ייראה תשלום המקדמה (₪100 לדוגמה). אין כאן תשלום אמיתי.</span></div>
+            <div className="ac-note demo" role="note"><strong>מצב הדגמה</strong><span>כך ייראה תשלום המקדמה (₪100 לדוגמה) והשעות לפי יומן האולפן (17:00–18:00 תפוסות לדוגמה). אין כאן תשלום אמיתי ושום דבר לא נכנס ליומן.</span></div>
           )}
           {result === 'paid' && (
             <div className="ac-note ok" role="status">
