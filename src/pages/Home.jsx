@@ -3,7 +3,7 @@ import { Layout, Header, Footer, BookBar } from '../components/Layout.jsx';
 import { StudioVideo, Faq, Location } from '../components/Sections.jsx';
 import { Pricing } from '../components/Pricing.jsx';
 import { Booking } from '../components/Booking.jsx';
-import { IconWA, IconMixer, IconSpeaker, IconNote, IconMic, IconPlay, IconInstagram, IconTikTok, IconYouTube, IconFacebook } from '../components/icons.jsx';
+import { IconWA, IconMixer, IconSpeaker, IconMic, IconPlay, IconInstagram, IconTikTok, IconYouTube, IconFacebook } from '../components/icons.jsx';
 import { ALL_ITEMS, HOME_FAQ, SOCIAL, WA_HELLO, PHONE, TEL, HOURS, priceText } from '../data.js';
 
 const QUICK = [
@@ -15,7 +15,7 @@ const QUICK = [
   { label: 'קליפים', pick: { service: 'clip' } },
 ];
 
-const INITIAL = { services: ['rehearsal'], band: '2–4 נגנים', rec: true, dur: '3', time: '19:00', selected: [], date: '', name: '', phone: '', email: '', notes: '' };
+const INITIAL = { services: [], band: '2–4 נגנים', rec: true, dur: '3', time: '19:00', selected: [], date: '', name: '', phone: '', email: '', notes: '' };
 
 const WAVE = Array.from({ length: 48 }, (_, i) => 25 + ((i * 13 + 7) % 75));
 
@@ -23,7 +23,6 @@ const yt = (q) => 'https://www.youtube.com/results?search_query=' + encodeURICom
 
 export default function Home() {
   const [bk, setBk] = useState(INITIAL);
-  const [mode, setMode] = useState('studio');
 
   /* בחירה מהמחירון / מכפתורי הזמנה מהירה → ממלא את טופס ההזמנה */
   /* אפשר לבחור כמה דברים: כל בחירה מוסיפה להזמנה (ובמחירון לחיצה נוספת מורידה) */
@@ -35,9 +34,9 @@ export default function Home() {
         const has = s.selected.some((x) => x.id === it.id);
         if (has && toggle) {
           const selected = s.selected.filter((x) => x.id !== it.id);
-          // מורידים גם את השירות שהחבילה הוסיפה — אם אף חבילה אחרת לא צריכה אותו ונשאר לפחות שירות אחד
+          // מורידים גם את השירות שהחבילה הוסיפה — אם אף חבילה אחרת לא צריכה אותו
           const stillNeeded = selected.some((x) => (ALL_ITEMS.find((y) => y.id === x.id) || {}).service === it.service);
-          const services = !stillNeeded && s.services.length > 1 ? s.services.filter((v) => v !== it.service) : s.services;
+          const services = !stillNeeded ? s.services.filter((v) => v !== it.service) : s.services;
           return { ...s, selected, services };
         }
         if (has) return s;
@@ -85,16 +84,10 @@ export default function Home() {
 
         <section id="home" className="wrap hero" aria-labelledby="hero-title">
           <div className="hero-txt">
-            <div role="group" aria-label="בחירת מיקוד" className="modes">
-              <button type="button" className="pill" aria-pressed={mode === 'artist'} onClick={() => setMode('artist')}>האמן והיוצר</button>
-              <button type="button" className="pill" aria-pressed={mode === 'studio'} onClick={() => setMode('studio')}>אולפן ההקלטות וחדר החזרות</button>
-            </div>
             <h1 id="hero-title" className="d">יניר סול <span style={{ color: 'var(--violet-l)' }}>|</span> SOL Production — <span className="grad">אולפן הקלטות באור יהודה</span></h1>
             <p className="lead" style={{ fontSize: 20, maxWidth: 620 }}>אולפן הקלטות מתקדם, חדר חזרות אקוסטי עם הקלטת ערוצים מלאה, והפקה מוזיקלית מקצה לקצה — כולל הקלטת קאברים, ברכות ושירי בר ובת מצווה.</p>
             <div className="glass hide-m" style={{ padding: '18px 22px', display: 'flex', gap: 14, alignItems: 'center', maxWidth: 600 }}>
-              {mode === 'artist'
-                ? <><IconNote /><p style={{ margin: 0, fontSize: 16, lineHeight: 1.55 }}>זמר, כותב, מלחין ומפיק. שירים מקוריים והפקות שנולדות מהדף הריק.</p></>
-                : <><IconMic /><p style={{ margin: 0, fontSize: 16, lineHeight: 1.55 }}>חדר חזרות מטופל אקוסטית עם בקליין מלא, אולפן הקלטות עם תא שירה, וכל הערוצים מנותבים ישירות לחדר הבקרה.</p></>}
+              <IconMic /><p style={{ margin: 0, fontSize: 16, lineHeight: 1.55 }}>חדר חזרות מטופל אקוסטית עם בקליין מלא, אולפן הקלטות עם תא שירה, וכל הערוצים מנותבים ישירות לחדר הבקרה.</p>
             </div>
             <div className="row">
               <a className="btn btn-main" href={WA_HELLO} target="_blank" rel="noopener"><IconWA />שריינו סשן בוואטסאפ</a>

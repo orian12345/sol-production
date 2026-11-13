@@ -5,6 +5,7 @@ import { TERMS } from '../terms.js';
 
 const OPEN = 10, CLOSE = 23;
 const ERRORS = {
+  no_service: 'בחרו קודם מה תרצו להזמין (שלב 1).',
   missing_contact: 'צריך למלא שם מלא ומספר טלפון תקין.',
   bad_slot: 'בחרו תאריך ושעת התחלה (לפחות שעה מעכשיו).',
   slot_taken: 'השעה הזו נתפסה הרגע — בחרו שעה אחרת.',
@@ -24,12 +25,12 @@ export function Booking({ st, setSt }) {
   const [result, setResult] = useState('');       // 'booked' | 'failed'
 
   const paid = cfg.configured;
-  const services = st.services && st.services.length ? st.services : ['rehearsal'];
+  const services = st.services || [];   // בכניסה לאתר שום שירות לא מסומן — הלקוח בוחר
   const selected = st.selected || [];
   const isReh = services.includes('rehearsal');
   const showHours = paid || isReh || services.includes('write');
-  // לחיצה על שירות מוסיפה/מורידה אותו (תמיד נשאר לפחות אחד)
-  const toggleSvc = (id) => set({ services: services.includes(id) ? (services.length > 1 ? services.filter((x) => x !== id) : services) : [...services, id] });
+  // לחיצה על שירות מוסיפה/מורידה אותו
+  const toggleSvc = (id) => set({ services: services.includes(id) ? services.filter((x) => x !== id) : [...services, id] });
   const removeSel = (id) => set({ selected: selected.filter((x) => x.id !== id) });
   const dur = parseInt(st.dur, 10) || 2;
 
@@ -89,7 +90,7 @@ export function Booking({ st, setSt }) {
   let dateLabel = 'גמיש – נתאם יחד';
   if (st.date) { const p = st.date.split('-'); dateLabel = `${p[2]}/${p[1]}/${p[0]}`; }
   const name = st.name.trim(), notes = st.notes.trim();
-  const svcLabel = SERVICES.filter(([id]) => services.includes(id)).map(([, l]) => l).join(' + ');
+  const svcLabel = SERVICES.filter(([id]) => services.includes(id)).map(([, l]) => l).join(' + ') || 'עוד לא נבחר';
   const durLabel = DURS.find((x) => x[0] === st.dur)[1];
 
   const lines = ['היי יניר, אשמח לשריין סשן ב־SOL Production:', '', (services.length > 1 ? '• שירותים: ' : '• שירות: ') + svcLabel];
@@ -116,11 +117,11 @@ export function Booking({ st, setSt }) {
     window.location.href = '/quote#q=' + encodeURIComponent(JSON.stringify(data));
   };
 
-  const canPay = paid && st.date && time && name && (st.phone || '').replace(/\D/g, '').length >= 9;
+  const canPay = paid && services.length > 0 && st.date && time && name && (st.phone || '').replace(/\D/g, '').length >= 9;
 
   const pay = async () => {
     setErr('');
-    if (!canPay) { setErr(!st.date || !time ? ERRORS.bad_slot : ERRORS.missing_contact); return; }
+    if (!canPay) { setErr(!services.length ? ERRORS.no_service : !st.date || !time ? ERRORS.bad_slot : ERRORS.missing_contact); return; }
     setPaying(true);
     if (demo) {
       // הדגמה: במקום דף התשלום — מדלגים ישר להודעת ההצלחה
@@ -283,7 +284,7 @@ export function Booking({ st, setSt }) {
             <>
               <h3 id="pv-title" className="d" style={{ margin: 0, fontSize: 22 }}>סיכום ושריון</h3>
               <ul className="ticks" style={{ fontSize: 15 }}>
-                {SERVICES.filter(([id]) => services.includes(id)).map(([id, l]) => <li key={id}>{l}</li>)}
+                {services.length ? SERVICES.filter(([id]) => services.includes(id)).map(([id, l]) => <li key={id}>{l}</li>) : <li>שירות — עוד לא נבחר</li>}
                 <li>{st.date ? `${dateLabel}${time ? ' · ' + time : ''} · ${durLabel}` : 'תאריך — עוד לא נבחר'}</li>
                 <li>{name || 'שם — עוד לא הוזן'}</li>
               </ul>
@@ -302,7 +303,7 @@ export function Booking({ st, setSt }) {
             <>
               <h3 id="pv-title" className="d" style={{ margin: 0, fontSize: 22 }}>סיכום ההזמנה</h3>
               <ul className="ticks" style={{ fontSize: 15 }} aria-live="polite">
-                {SERVICES.filter(([id]) => services.includes(id)).map(([id, l]) => <li key={id}>{l}</li>)}
+                {services.length ? SERVICES.filter(([id]) => services.includes(id)).map(([id, l]) => <li key={id}>{l}</li>) : <li>שירות — עוד לא נבחר</li>}
                 <li>{dateLabel}{showHours ? ` · ${time} · ${durLabel}` : ''}</li>
                 {isReh && <li>{st.band} · הקלטת ערוצים: {st.rec ? 'כן' : 'לא'}</li>}
                 <li>{name || 'שם — עוד לא הוזן'}</li>
