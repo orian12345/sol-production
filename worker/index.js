@@ -33,6 +33,7 @@ export default {
       if (url.pathname === '/api/availability' && request.method === 'GET') return await availability(url, env);
       if (url.pathname === '/api/book' && request.method === 'POST') return await book(request, url, env);
       if (url.pathname === '/api/morning-notify' && request.method === 'POST') return await notify(request, url, env);
+      if (url.pathname === '/api/request' && request.method === 'POST') return await sendRequest(request, env);
       if (url.pathname === '/api/academy-slots' && request.method === 'GET') return await academySlots(url, env);
       if (url.pathname === '/api/academy-pay' && request.method === 'POST') return await academyPay(request, url, env);
       if (url.pathname === '/api/academy-notify' && request.method === 'POST') return await academyNotify(request, url, env);
@@ -96,7 +97,7 @@ const overlaps = (ranges, s, e) => ranges.some(([a, b]) => s < b && a < e);
 
 async function availability(url, env) {
   const deposit = Number(env.DEPOSIT || 0);
-  const base = { configured: configured(env) && deposit > 0, deposit, policy: env.CANCEL_POLICY || '', academy: academyCfg(env) };
+  const base = { configured: configured(env) && deposit > 0, deposit, policy: env.CANCEL_POLICY || '', academy: academyCfg(env), notify: notifyOn(env) };
   if (!base.configured) return json(base);
   const date = url.searchParams.get('date');
   const dur = Math.min(8, Math.max(1, parseInt(url.searchParams.get('dur'), 10) || 2));
@@ -429,8 +430,34 @@ async function notifyOwner(env, text) {
   }
   const res = await Promise.allSettled(jobs);
   res.filter((x) => x.status === 'rejected').forEach((x) => console.error('notifyOwner failed:', x.reason && x.reason.message));
-  return jobs.length > 0;
+  return res.some((x) => x.status === 'fulfilled'); // הצליח בערוץ אחד לפחות
 }
+const notifyOn = (env) => !!((env.CALLMEBOT_PHONE && env.CALLMEBOT_APIKEY) || (env.RESEND_API_KEY && env.OWNER_EMAIL));
+
+/* בקשה בלי תשלום (טופס האולפן / כרטיס באקדמיה) → האתר שולח ליניר בוואטסאפ, הלקוח לא שולח כלום */
+async function sendRequest(request, env) {
+  if (!notifyOn(env)) return json({ error: 'not_configured' }, 503);
+  const b = await request.json().catch(() => ({}));
+  if (b.website) return json({ ok: true }); // מלכודת לבוטים (שדה נסתר שבני אדם לא ממלאים)
+  const clip = (v, n) => String(v ?? '').trim().slice(0, n);
+  const name = clip(b.name, 80), phone = clip(b.phone, 20).replace(/[^\d+\-\s]/g, '');
+  if (!name || phone.replace(/\D/g, '').length < 9) return json({ error: 'missing_contact' }, 400);
+
+  // הגנה מספאם: עד 5 בקשות בשעה מאותה כתובת
+  if (env.BOOKINGS) {
+    const ip = request.headers.get('cf-connecting-ip') || 'x';
+    const k = 'rl:' + ip + ':' + Math.floor(Date.now() / 3600000);
+    const n = Number((await env.BOOKINGS.get(k)) || 0);
+    if (n >= 5) return json({ error: 'too_many' }, 429);
+    await env.BOOKINGS.put(k, String(n + 1), { expirationTtl: 3700 });
+  }
+
+  const lines = Array.isArray(b.lines) ? b.lines.slice(0, 25).map((l) => clip(l, 300)).filter(Boolean) : [];
+  const title = b.kind === 'academy' ? '🎸 SOL Academy – בקשה חדשה לשיעור (בלי תשלום)' : '🎙️ בקשה חדשה מהאתר – SOL Production (בלי תשלום)';
+  const sent = await notifyOwner(env, [title, ' ', ...lines, `שם: ${name}`, `טלפון: ${phone}`, ' ', `לחזור ללקוח בוואטסאפ: ${telLink(phone)}`].join('\n'));
+  return sent ? json({ ok: true }) : json({ error: 'send_failed' }, 502);
+}
+
 const ilDate = (ms) => new Date(ms).toLocaleString('he-IL', { timeZone: TZ, weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 const telLink = (phone) => 'https://wa.me/' + String(phone).replace(/\D/g, '').replace(/^0/, '972');
 

@@ -643,3 +643,4 @@ footer{background:#090c1e;border-top-color:var(--line-soft)}
 .ac-when input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(.75) sepia(1) saturate(3) hue-rotate(5deg);cursor:pointer}
 .ac-when-note{font-size:12.5px;color:#b9b3a3}
 .ac-when select.ac-field{padding-inline-start:14px;padding-inline-end:34px}
+.hp{position:absolute !important;left:-9999px !important;width:1px;height:1px;opacity:0}

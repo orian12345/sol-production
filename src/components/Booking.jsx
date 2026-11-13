@@ -107,6 +107,34 @@ export function Booking({ st, setSt }) {
   lines.push('', 'תודה!');
   const msg = lines.join('\n');
 
+  // בקשה בלי תשלום: האתר שולח ליניר בוואטסאפ (כשהערוץ מחובר). אחרת — הלקוח שולח בוואטסאפ כמו קודם.
+  const autoSend = !paid && !!cfg.notify;
+  const [sending, setSending] = useState(false);
+  const [sendErr, setSendErr] = useState('');
+  const [hp, setHp] = useState(''); // מלכודת לבוטים
+  const sendRequest = async () => {
+    setSendErr('');
+    if (!services.length) { setSendErr(ERRORS.no_service); return; }
+    if (!name || (st.phone || '').replace(/\D/g, '').length < 9) { setSendErr(ERRORS.missing_contact); return; }
+    const reqLines = [(services.length > 1 ? 'שירותים: ' : 'שירות: ') + svcLabel];
+    selected.forEach((x) => reqLines.push(`מהמחירון: ${x.name} (${x.price})`));
+    if (isReh) reqLines.push(`הרכב: ${st.band} · הקלטת ערוצים: ${st.rec ? 'כן' : 'לא'}`);
+    reqLines.push('תאריך: ' + dateLabel + (showHours ? ` · ${time} · ${durLabel}` : ''));
+    if (st.email && st.email.trim()) reqLines.push('מייל: ' + st.email.trim());
+    if (notes) reqLines.push('הערות: ' + notes);
+    setSending(true);
+    try {
+      const r = await fetch('/api/request', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ kind: 'studio', name, phone: st.phone, lines: reqLines, website: hp }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (r.ok && j.ok) { setResult('sent'); document.getElementById('booking')?.scrollIntoView({ behavior: 'smooth' }); }
+      else setSendErr(j.error === 'too_many' ? 'נשלחו יותר מדי בקשות. נסו שוב בעוד שעה או התקשרו.' : 'השליחה לא הצליחה. אפשר לשלוח ליניר ישירות בוואטסאפ:');
+    } catch { setSendErr('השליחה לא הצליחה. אפשר לשלוח ליניר ישירות בוואטסאפ:'); }
+    setSending(false);
+  };
+
   // הצעת מחיר + אישור תקנון (מוצג ללקוחות רק אחרי שהתקנון אושר — אחרת רק בהדגמה)
   const showQuote = TERMS.approved || demo;
   const openQuote = () => {
@@ -171,6 +199,13 @@ export function Booking({ st, setSt }) {
         <div className="notice demo" role="note">
           <strong>מצב הדגמה</strong>
           <span>כך ייראה השריון ללקוחות. אין כאן תשלום אמיתי ושום דבר לא נכנס ליומן — במקום דף התשלום של Morning קופצים ישר להודעת האישור.</span>
+        </div>
+      )}
+      {result === 'sent' && (
+        <div className="notice ok" role="status">
+          <strong>הבקשה נשלחה ✓</strong>
+          <span>יניר קיבל את כל הפרטים ויחזור אליך בהקדם.</span>
+          <button type="button" className="icon-btn" aria-label="סגירת ההודעה" onClick={() => setResult('')}><IconClose /></button>
         </div>
       )}
       {result === 'booked' && (
@@ -251,7 +286,7 @@ export function Booking({ st, setSt }) {
               <input id="bk-name" className="field" type="text" autoComplete="name" placeholder="איך קוראים לך?" value={st.name} onChange={(e) => set({ name: e.target.value })} />
             </div>
             <div>
-              <label className="lbl" htmlFor="bk-phone">טלפון{paid ? '' : ' (לא חובה)'}</label>
+              <label className="lbl" htmlFor="bk-phone">טלפון{paid || cfg.notify ? '' : ' (לא חובה)'}</label>
               <input id="bk-phone" className="field" type="tel" dir="ltr" autoComplete="tel" placeholder="050-0000000" value={st.phone} onChange={(e) => set({ phone: e.target.value })} />
             </div>
             {paid && (
@@ -308,12 +343,31 @@ export function Booking({ st, setSt }) {
                 {isReh && <li>{st.band} · הקלטת ערוצים: {st.rec ? 'כן' : 'לא'}</li>}
                 <li>{name || 'שם — עוד לא הוזן'}</li>
               </ul>
-              <a className="btn btn-wa" href={waLink(msg)} target="_blank" rel="noopener" style={{ width: '100%' }}>
-                <IconWA />שליחת ההזמנה ליניר
-              </a>
-              <p style={{ margin: 0, fontSize: 14, color: 'var(--muted)', textAlign: 'center' }}>
-                {name ? 'הכול מוכן — לחיצה אחת ונפתח וואטסאפ עם כל הפרטים.' : 'טיפ: הוסיפו שם כדי שיניר ידע למי לחזור.'}
-              </p>
+              {autoSend ? (
+                <>
+                  <input type="text" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hp" value={hp} onChange={(e) => setHp(e.target.value)} />
+                  <button type="button" className="btn btn-wa" style={{ width: '100%' }} onClick={sendRequest} disabled={sending} aria-busy={sending}>
+                    <IconWA />{sending ? 'שולחים…' : 'שליחת בקשה ליניר'}
+                  </button>
+                  {sendErr && (
+                    <p role="alert" style={{ margin: 0, fontSize: 14, color: '#fca5a5', textAlign: 'center' }}>
+                      {sendErr}{' '}{sendErr.endsWith(':') && <a href={waLink(msg)} target="_blank" rel="noopener">שליחה בוואטסאפ</a>}
+                    </p>
+                  )}
+                  <p style={{ margin: 0, fontSize: 14, color: 'var(--muted)', textAlign: 'center' }}>
+                    הבקשה נשלחת ישירות ליניר בוואטסאפ — הוא יחזור אליכם בהקדם.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <a className="btn btn-wa" href={waLink(msg)} target="_blank" rel="noopener" style={{ width: '100%' }}>
+                    <IconWA />שליחת ההזמנה ליניר
+                  </a>
+                  <p style={{ margin: 0, fontSize: 14, color: 'var(--muted)', textAlign: 'center' }}>
+                    {name ? 'הכול מוכן — לחיצה אחת ונפתח וואטסאפ עם כל הפרטים.' : 'טיפ: הוסיפו שם כדי שיניר ידע למי לחזור.'}
+                  </p>
+                </>
+              )}
               <p className="note policy-note">{CANCEL_POLICY.short} <a href="/cancellation">מדיניות ביטולים</a></p>
             </>
           )}

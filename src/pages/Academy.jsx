@@ -19,7 +19,7 @@ const ERRORS = {
 };
 
 /* pay = { on, deposit, demo } — מקדמה דרך Morning (כבוי עד שמגדירים ACADEMY_DEPOSIT ומחברים את Morning) */
-function TeacherCard({ t, pay, onDemoPaid }) {
+function TeacherCard({ t, pay, onDemoPaid, onSent }) {
   const recommended = t.tiers.find((x) => x.recommended) || t.tiers[0];
   const [tierId, setTierId] = useState(recommended.id);
   const tier = t.tiers.find((x) => x.id === tierId);
@@ -69,9 +69,12 @@ function TeacherCard({ t, pay, onDemoPaid }) {
     'תודה!',
   ].join('\n');
 
+  // form: false | 'pay' (מקדמה) | 'req' (בקשה בלי תשלום — האתר שולח ליניר בוואטסאפ)
+  const [hp, setHp] = useState('');
   const submit = async (e) => {
     e.preventDefault();
     setErr('');
+    if (form === 'req') return sendReq();
     if (!date || !time) { setErr(ERRORS.missing_slot); return; }
     if (!c.name.trim() || c.phone.replace(/\D/g, '').length < 9) { setErr(ERRORS.missing_contact); return; }
     setBusy(true);
@@ -87,6 +90,28 @@ function TeacherCard({ t, pay, onDemoPaid }) {
       setErr(ERRORS[j.error] || ERRORS.payment_unavailable);
       if (j.error === 'slot_taken') { setTakenMap((m) => ({ ...(m || {}), [time]: true })); setTime(''); }
     } catch { setErr(ERRORS.payment_unavailable); }
+    setBusy(false);
+  };
+
+  const sendReq = async () => {
+    if (!c.name.trim() || c.phone.replace(/\D/g, '').length < 9) { setErr(ERRORS.missing_contact); return; }
+    setBusy(true);
+    if (pay.demo) { setTimeout(() => { setBusy(false); setForm(false); onSent(); }, 700); return; }
+    const lines = [
+      `כלי: ${t.instrument}`, `מורה: ${t.teacher}`,
+      `חבילה: ${tierName} – ${ils(tier.price)}`,
+      `מועד מבוקש: ${when || 'גמיש – נתאם יחד'}`,
+      c.email.trim() && `מייל: ${c.email.trim()}`,
+    ].filter(Boolean);
+    try {
+      const r = await fetch('/api/request', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ kind: 'academy', name: c.name.trim(), phone: c.phone, lines, website: hp }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (r.ok && j.ok) { setForm(false); onSent(); }
+      else setErr(j.error === 'too_many' ? 'נשלחו יותר מדי בקשות. נסו שוב בעוד שעה או התקשרו.' : 'השליחה לא הצליחה — אפשר לשלוח ישירות בוואטסאפ למטה.');
+    } catch { setErr('השליחה לא הצליחה — אפשר לשלוח ישירות בוואטסאפ למטה.'); }
     setBusy(false);
   };
 
@@ -153,53 +178,77 @@ function TeacherCard({ t, pay, onDemoPaid }) {
       </fieldset>
 
       {pay.on && !form && (
-        <button type="button" className="ac-cta" onClick={() => setForm(true)}>
+        <button type="button" className="ac-cta" onClick={() => { setErr(''); setForm('pay'); }}>
           {deposit < tier.price ? `תשלום מקדמה (${ils(deposit)}) ושריון מקום` : `תשלום (${ils(deposit)}) ושריון מקום`}
         </button>
       )}
-      {pay.on && form && (
+      {form && (
         <form className="ac-pay" onSubmit={submit} noValidate>
+          <input type="text" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hp" value={hp} onChange={(e) => setHp(e.target.value)} />
           <div className="ac-pay-head">
-            <strong>{deposit < tier.price ? `מקדמה ${ils(deposit)}` : `תשלום ${ils(deposit)}`}</strong>
-            <span>{tierName}{deposit < tier.price ? ` · יתרה ${ils(tier.price - deposit)} בתיאום` : ''}</span>
-            <span>{when ? 'מועד: ' + when : 'בחרו תאריך ושעה למעלה'}</span>
+            {form === 'pay'
+              ? <strong>{deposit < tier.price ? `מקדמה ${ils(deposit)}` : `תשלום ${ils(deposit)}`}</strong>
+              : <strong>שליחת בקשה ליניר</strong>}
+            <span>{tierName}{form === 'pay' && deposit < tier.price ? ` · יתרה ${ils(tier.price - deposit)} בתיאום` : ` · ${ils(tier.price)}`}</span>
+            <span>{when ? 'מועד: ' + when : form === 'pay' ? 'בחרו תאריך ושעה למעלה' : 'מועד: גמיש – נתאם יחד'}</span>
             <button type="button" className="ac-x" aria-label="סגירה" onClick={() => setForm(false)}><IconClose /></button>
           </div>
           <label className="ac-lbl" htmlFor={'acn-' + t.id}>שם מלא</label>
           <input id={'acn-' + t.id} className="ac-field" autoComplete="name" value={c.name} onChange={(e) => setC({ ...c, name: e.target.value })} />
           <label className="ac-lbl" htmlFor={'acp-' + t.id}>טלפון</label>
           <input id={'acp-' + t.id} className="ac-field" type="tel" dir="ltr" autoComplete="tel" placeholder="050-0000000" value={c.phone} onChange={(e) => setC({ ...c, phone: e.target.value })} />
-          <label className="ac-lbl" htmlFor={'ace-' + t.id}>מייל לקבלה (לא חובה)</label>
+          <label className="ac-lbl" htmlFor={'ace-' + t.id}>{form === 'pay' ? 'מייל לקבלה (לא חובה)' : 'מייל (לא חובה)'}</label>
           <input id={'ace-' + t.id} className="ac-field" type="email" dir="ltr" autoComplete="email" value={c.email} onChange={(e) => setC({ ...c, email: e.target.value })} />
           {err && <p role="alert" className="ac-err">{err}</p>}
-          <button type="submit" className="ac-cta" disabled={busy}>{busy ? 'פותחים את דף התשלום…' : 'למעבר לתשלום מאובטח'}</button>
-          <p className="ac-fine">התשלום מאובטח דרך Morning והקבלה נשלחת אוטומטית. {CANCEL_POLICY.short} <a href="/cancellation">מדיניות ביטולים</a></p>
+          {form === 'pay' ? (
+            <>
+              <button type="submit" className="ac-cta" disabled={busy}>{busy ? 'פותחים את דף התשלום…' : 'למעבר לתשלום מאובטח'}</button>
+              <p className="ac-fine">התשלום מאובטח דרך Morning והקבלה נשלחת אוטומטית. {CANCEL_POLICY.short} <a href="/cancellation">מדיניות ביטולים</a></p>
+            </>
+          ) : (
+            <>
+              <button type="submit" className="ac-cta" disabled={busy}><IconWA size={20} />{busy ? 'שולחים…' : 'שליחת הבקשה'}</button>
+              <p className="ac-fine">הבקשה נשלחת ישירות ליניר בוואטסאפ — הוא יחזור אליכם בהקדם.</p>
+            </>
+          )}
         </form>
       )}
 
-      <a className={pay.on ? 'ac-cta ac-cta-2' : 'ac-cta'} href={waLink(msg)} target="_blank" rel="noopener">
-        <IconWA size={20} />{academyText.cta}
-      </a>
+      {pay.notify ? (
+        form !== 'req' && (
+          <button type="button" className={pay.on ? 'ac-cta ac-cta-2' : 'ac-cta'} onClick={() => { setErr(''); setForm('req'); }}>
+            <IconWA size={20} />{academyText.cta}
+          </button>
+        )
+      ) : (
+        <a className={pay.on ? 'ac-cta ac-cta-2' : 'ac-cta'} href={waLink(msg)} target="_blank" rel="noopener">
+          <IconWA size={20} />{academyText.cta}
+        </a>
+      )}
+      {pay.notify && err && form === 'req' && err.includes('בוואטסאפ למטה') && (
+        <a className="ac-cta ac-cta-2" href={waLink(msg)} target="_blank" rel="noopener"><IconWA size={20} />שליחה ישירה בוואטסאפ</a>
+      )}
     </article>
   );
 }
 
 export default function Academy() {
-  const [pay, setPay] = useState({ on: false, deposit: 0, demo: false, calendar: false });
+  const [pay, setPay] = useState({ on: false, deposit: 0, demo: false, calendar: false, notify: false });
   const [result, setResult] = useState('');
 
   useEffect(() => {
     const q = new URLSearchParams(window.location.search);
-    if (q.get('demo')) { setPay({ on: true, deposit: 100, demo: true, calendar: true }); return; }
+    if (q.get('demo')) { setPay({ on: true, deposit: 100, demo: true, calendar: true, notify: true }); return; }
     if (q.get('paid')) setResult('paid');
     else if (q.get('payfail')) setResult('failed');
     if (q.get('paid') || q.get('payfail')) window.history.replaceState(null, '', '/academy');
     fetch('/api/availability').then((r) => (r.ok ? r.json() : null)).then((j) => {
-      if (j && j.academy) setPay({ on: !!j.academy.on, deposit: j.academy.deposit || 0, demo: false, calendar: !!j.academy.calendar });
+      if (j && j.academy) setPay({ on: !!j.academy.on, deposit: j.academy.deposit || 0, demo: false, calendar: !!j.academy.calendar, notify: !!j.notify });
     }).catch(() => {});
   }, []);
 
   const demoPaid = () => { setResult('paid'); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+  const requestSent = () => { setResult('sent'); window.scrollTo({ top: 0, behavior: 'smooth' }); };
 
   return (
     <Layout>
@@ -217,6 +266,12 @@ export default function Academy() {
           {pay.demo && (
             <div className="ac-note demo" role="note"><strong>מצב הדגמה</strong><span>כך ייראה תשלום המקדמה (₪100 לדוגמה) והשעות לפי יומן האולפן (17:00–18:00 תפוסות לדוגמה). אין כאן תשלום אמיתי ושום דבר לא נכנס ליומן.</span></div>
           )}
+          {result === 'sent' && (
+            <div className="ac-note ok" role="status">
+              <strong>הבקשה נשלחה ✓</strong><span>יניר קיבל את הפרטים בוואטסאפ ויחזור אליך בהקדם לתיאום השיעור.</span>
+              <button type="button" className="ac-x" aria-label="סגירת ההודעה" onClick={() => setResult('')}><IconClose /></button>
+            </div>
+          )}
           {result === 'paid' && (
             <div className="ac-note ok" role="status">
               <strong>המקום שוריין ✓</strong><span>יניר יצור איתך קשר בהקדם לתיאום מועד השיעור.</span>
@@ -231,7 +286,7 @@ export default function Academy() {
           )}
 
           <div className="ac-grid swipe">
-            {academyData.map((t) => <TeacherCard key={t.id} t={t} pay={pay} onDemoPaid={demoPaid} />)}
+            {academyData.map((t) => <TeacherCard key={t.id} t={t} pay={pay} onDemoPaid={demoPaid} onSent={requestSent} />)}
           </div>
         </section>
       </main>
