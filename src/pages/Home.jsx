@@ -15,7 +15,7 @@ const QUICK = [
   { label: 'קליפים', pick: { service: 'clip' } },
 ];
 
-const INITIAL = { service: 'rehearsal', band: '2–4 נגנים', rec: true, dur: '3', time: '19:00', selected: null, date: '', name: '', notes: '' };
+const INITIAL = { service: 'rehearsal', band: '2–4 נגנים', rec: true, dur: '3', time: '19:00', selected: null, date: '', name: '', phone: '', email: '', notes: '' };
 
 const WAVE = Array.from({ length: 48 }, (_, i) => 25 + ((i * 13 + 7) % 75));
 

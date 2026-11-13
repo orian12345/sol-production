@@ -1,48 +1,145 @@
+import { useEffect, useState } from 'react';
 import { SERVICES, BANDS, DURS, waLink } from '../data.js';
 import { IconWA, IconClose } from './icons.jsx';
 
 const OPEN = 10, CLOSE = 23;
+const ERRORS = {
+  missing_contact: 'צריך למלא שם מלא ומספר טלפון תקין.',
+  bad_slot: 'בחרו תאריך ושעת התחלה (לפחות שעה מעכשיו).',
+  slot_taken: 'השעה הזו נתפסה הרגע — בחרו שעה אחרת.',
+  payment_unavailable: 'לא הצלחנו לפתוח את דף התשלום. נסו שוב או שלחו הודעה בוואטסאפ.',
+};
 
-/* טופס ההזמנה: בונה הודעת וואטסאפ מוכנה. ה-state מגיע מהדף (כדי שהמחירון יוכל לבחור חבילה) */
+/* טופס ההזמנה.
+   כשהשרת מחובר ל-Morning וליומן של יניר: מציג רק שעות פנויות, ומשריין רק אחרי תשלום מקדמה.
+   כשלא מחובר (או באתר בלי שרת): עובד כמו קודם — הודעה מוכנה לוואטסאפ. */
 export function Booking({ st, setSt }) {
   const set = (patch) => setSt((s) => ({ ...s, ...patch }));
-  const isReh = st.service === 'rehearsal';
-  const showHours = isReh || st.service === 'write';
+  const [cfg, setCfg] = useState({ configured: false, deposit: 0, policy: '' });
+  const [slots, setSlots] = useState(null);       // null = עוד לא נטען / לא רלוונטי
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  const [paying, setPaying] = useState(false);
+  const [err, setErr] = useState('');
+  const [result, setResult] = useState('');       // 'booked' | 'failed'
 
+  const paid = cfg.configured;
+  const isReh = st.service === 'rehearsal';
+  const showHours = paid || isReh || st.service === 'write';
   const dur = parseInt(st.dur, 10) || 2;
-  const times = [];
-  for (let h = OPEN; h + dur <= CLOSE; h++) times.push((h < 10 ? '0' : '') + h + ':00');
-  const time = times.includes(st.time) ? st.time : times[times.length - 1];
+
+  // האם יש שרת הזמנות + חזרה מדף התשלום
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    if (q.get('booked')) setResult('booked');
+    else if (q.get('payfail')) setResult('failed');
+    if (q.get('booked') || q.get('payfail')) {
+      const u = new URL(window.location.href);
+      u.searchParams.delete('booked'); u.searchParams.delete('payfail');
+      window.history.replaceState(null, '', u.pathname + u.search + u.hash);
+      setTimeout(() => document.getElementById('booking')?.scrollIntoView({ behavior: 'smooth' }), 100);
+    }
+    fetch('/api/availability').then((r) => (r.ok ? r.json() : null)).then((j) => { if (j) setCfg(j); }).catch(() => {});
+  }, []);
+
+  // שעות פנויות מהיומן של יניר
+  useEffect(() => {
+    if (!paid || !st.date) { setSlots(null); return; }
+    let live = true;
+    setLoadingSlots(true);
+    fetch(`/api/availability?date=${st.date}&dur=${dur}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { if (live) setSlots(j && j.slots ? j.slots : []); })
+      .catch(() => { if (live) setSlots([]); })
+      .finally(() => { if (live) setLoadingSlots(false); });
+    return () => { live = false; };
+  }, [paid, st.date, dur]);
+
+  const allTimes = [];
+  for (let h = OPEN; h + dur <= CLOSE; h++) allTimes.push((h < 10 ? '0' : '') + h + ':00');
+  const freeOf = (t) => !slots || !!(slots.find((s) => s.time === t) || {}).free;
+  const time = paid
+    ? (slots && freeOf(st.time) && allTimes.includes(st.time) ? st.time : '')
+    : (allTimes.includes(st.time) ? st.time : allTimes[allTimes.length - 1]);
 
   let dateLabel = 'גמיש – נתאם יחד';
   if (st.date) { const p = st.date.split('-'); dateLabel = `${p[2]}/${p[1]}/${p[0]}`; }
   const name = st.name.trim(), notes = st.notes.trim();
-  const lines = ['היי יניר, אשמח לשריין סשן ב־SOL Production:', '', '• שירות: ' + SERVICES.find((x) => x[0] === st.service)[1]];
+  const svcLabel = SERVICES.find((x) => x[0] === st.service)[1];
+  const durLabel = DURS.find((x) => x[0] === st.dur)[1];
+
+  const lines = ['היי יניר, אשמח לשריין סשן ב־SOL Production:', '', '• שירות: ' + svcLabel];
   if (st.selected) lines.push(`• חבילה מהמחירון: ${st.selected.name} (${st.selected.price})`);
   if (isReh) {
     lines.push('• הרכב: ' + st.band);
     lines.push('• הקלטת ערוצים מלאה (Multi-Track): ' + (st.rec ? 'כן' : 'לא'));
   }
   lines.push('• תאריך: ' + dateLabel);
-  if (showHours) lines.push('• שעת התחלה: ' + time, '• משך: ' + DURS.find((x) => x[0] === st.dur)[1]);
+  if (showHours) lines.push('• שעת התחלה: ' + (time || '—'), '• משך: ' + durLabel);
   lines.push('• שם: ' + (name || '—'));
+  if (st.phone && st.phone.trim()) lines.push('• טלפון: ' + st.phone.trim());
   if (notes) lines.push('• הערות: ' + notes);
   lines.push('', 'תודה!');
   const msg = lines.join('\n');
 
-  const pill = (on, onClick, label, key, extra) => (
-    <button key={key ?? label} type="button" className="pill" aria-pressed={on} onClick={onClick} {...extra}>{label}</button>
+  const canPay = paid && st.date && time && name && (st.phone || '').replace(/\D/g, '').length >= 9;
+
+  const pay = async () => {
+    setErr('');
+    if (!canPay) { setErr(!st.date || !time ? ERRORS.bad_slot : ERRORS.missing_contact); return; }
+    setPaying(true);
+    try {
+      const r = await fetch('/api/book', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          serviceLabel: svcLabel, selected: st.selected ? `${st.selected.name} (${st.selected.price})` : '',
+          date: st.date, time, dur, name, phone: st.phone, email: st.email, notes,
+          band: isReh ? st.band : '', rec: isReh && st.rec,
+        }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (r.ok && j.url) { window.location.href = j.url; return; }
+      setErr(ERRORS[j.error] || ERRORS.payment_unavailable);
+      if (j.error === 'slot_taken') setSlots((s) => (s ? s.map((x) => (x.time === time ? { ...x, free: false } : x)) : s));
+    } catch {
+      setErr(ERRORS.payment_unavailable);
+    }
+    setPaying(false);
+  };
+
+  const pill = (on, onClick, label, key, disabled) => (
+    <button key={key ?? label} type="button" className="pill" aria-pressed={on} onClick={onClick} disabled={disabled}>{label}</button>
   );
 
   return (
     <section id="booking" className="wrap sec" aria-labelledby="booking-title" style={{ paddingTop: 0 }}>
       <div className="sec-head">
-        <span className="chip">הזמנה חכמה · וואטסאפ</span>
+        <span className="chip">{paid ? 'הזמנה ותשלום מקדמה' : 'הזמנה חכמה · וואטסאפ'}</span>
         <h2 id="booking-title" className="d h2">בונים את הסשן שלכם</h2>
-        <p className="lead">בוחרים שירות, תאריך ומשך — ההודעה נכתבת לבד ונשלחת ישר ליניר בוואטסאפ.</p>
+        <p className="lead">
+          {paid
+            ? 'בוחרים שירות, תאריך ושעה פנויה — משלמים מקדמה, והתאריך משוריין.'
+            : 'בוחרים שירות, תאריך ומשך — ההודעה נכתבת לבד ונשלחת ישר ליניר בוואטסאפ.'}
+        </p>
       </div>
+
+      {result === 'booked' && (
+        <div className="notice ok" role="status">
+          <strong>התאריך שוריין ✓</strong>
+          <span>יניר יצור איתך קשר בהקדם.</span>
+          <button type="button" className="icon-btn" aria-label="סגירת ההודעה" onClick={() => setResult('')}><IconClose /></button>
+        </div>
+      )}
+      {result === 'failed' && (
+        <div className="notice bad" role="alert">
+          <strong>התשלום לא הושלם</strong>
+          <span>התאריך לא שוריין. אפשר לנסות שוב, או לשלוח הודעה ליניר בוואטסאפ.</span>
+          <button type="button" className="icon-btn" aria-label="סגירת ההודעה" onClick={() => setResult('')}><IconClose /></button>
+        </div>
+      )}
+
       <div className="bk">
-        <form className="glass" noValidate onSubmit={(e) => e.preventDefault()}>
+        <form className="glass" noValidate onSubmit={(e) => { e.preventDefault(); if (paid) pay(); }}>
           <fieldset>
             <legend className="lbl">1 · איזה שירות?</legend>
             <div className="opts">
@@ -81,10 +178,20 @@ export function Booking({ st, setSt }) {
 
           {showHours && (
             <fieldset>
-              <legend className="lbl">3 · שעת התחלה</legend>
-              <div className="opts" dir="ltr" style={{ justifyContent: 'flex-end' }}>
-                {times.map((t) => pill(time === t, () => set({ time: t }), t))}
-              </div>
+              <legend className="lbl">3 · שעת התחלה{paid ? ' (רק שעות פנויות)' : ''}</legend>
+              {paid && !st.date && <p className="note" style={{ margin: 0 }}>בחרו קודם תאריך כדי לראות שעות פנויות.</p>}
+              {paid && st.date && loadingSlots && <p className="note" style={{ margin: 0 }}>בודקים ביומן…</p>}
+              {paid && st.date && !loadingSlots && slots && !slots.some((s) => s.free) && (
+                <p className="note" style={{ margin: 0 }}>אין שעות פנויות ביום הזה במשך שנבחר. נסו יום אחר או משך קצר יותר.</p>
+              )}
+              {(!paid || (st.date && !loadingSlots && slots)) && (
+                <div className="opts" dir="ltr" style={{ justifyContent: 'flex-end' }}>
+                  {allTimes.map((t) => {
+                    const free = !paid || freeOf(t);
+                    return pill(time === t, () => set({ time: t }), free ? t : t + ' · תפוס', t, !free);
+                  })}
+                </div>
+              )}
             </fieldset>
           )}
 
@@ -94,6 +201,16 @@ export function Booking({ st, setSt }) {
               <input id="bk-name" className="field" type="text" autoComplete="name" placeholder="איך קוראים לך?" value={st.name} onChange={(e) => set({ name: e.target.value })} />
             </div>
             <div>
+              <label className="lbl" htmlFor="bk-phone">טלפון{paid ? '' : ' (לא חובה)'}</label>
+              <input id="bk-phone" className="field" type="tel" dir="ltr" autoComplete="tel" placeholder="050-0000000" value={st.phone} onChange={(e) => set({ phone: e.target.value })} />
+            </div>
+            {paid && (
+              <div>
+                <label className="lbl" htmlFor="bk-email">מייל לקבלה (לא חובה)</label>
+                <input id="bk-email" className="field" type="email" dir="ltr" autoComplete="email" placeholder="name@example.com" value={st.email} onChange={(e) => set({ email: e.target.value })} />
+              </div>
+            )}
+            <div>
               <label className="lbl" htmlFor="bk-notes">הערות (לא חובה)</label>
               <input id="bk-notes" className="field" type="text" placeholder="שם חתן/כלת השמחה, שם הלהקה, ז'אנר…" value={st.notes} onChange={(e) => set({ notes: e.target.value })} />
             </div>
@@ -101,23 +218,47 @@ export function Booking({ st, setSt }) {
         </form>
 
         <aside className="glass" aria-labelledby="pv-title">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <h3 id="pv-title" className="d" style={{ margin: 0, fontSize: 22 }}>תצוגה מקדימה להודעה</h3>
-            <span className="chip" style={{ background: '#0f2a1c', color: '#6ee7a8' }}>וואטסאפ</span>
-          </div>
           {st.selected && (
             <div className="selbox">
               <span style={{ fontSize: 14 }}><span style={{ color: 'var(--muted)' }}>מהמחירון:</span> {st.selected.name + ' · ' + st.selected.price}</span>
               <button type="button" className="icon-btn" aria-label="ביטול החבילה שנבחרה" onClick={() => set({ selected: null })}><IconClose /></button>
             </div>
           )}
-          <div className="bubble" aria-live="polite">{msg}</div>
-          <a className="btn btn-wa" href={waLink(msg)} target="_blank" rel="noopener" style={{ width: '100%' }}>
-            <IconWA />שליחת הזמנה ישירה לוואטסאפ
-          </a>
-          <p style={{ margin: 0, fontSize: 14, color: 'var(--muted)', textAlign: 'center' }}>
-            {name ? 'הכול מוכן — לחיצה אחת ונפתח וואטסאפ עם כל הפרטים.' : 'טיפ: הוסיפו שם כדי שיניר ידע למי לחזור.'}
-          </p>
+
+          {paid ? (
+            <>
+              <h3 id="pv-title" className="d" style={{ margin: 0, fontSize: 22 }}>סיכום ושריון</h3>
+              <ul className="ticks" style={{ fontSize: 15 }}>
+                <li>{svcLabel}</li>
+                <li>{st.date ? `${dateLabel}${time ? ' · ' + time : ''} · ${durLabel}` : 'תאריך — עוד לא נבחר'}</li>
+                <li>{name || 'שם — עוד לא הוזן'}</li>
+              </ul>
+              <div className="prow"><span className="price">₪{cfg.deposit.toLocaleString('en-US')}</span><span className="unit">מקדמה לשריון התאריך</span></div>
+              <button type="button" className="btn btn-main" style={{ width: '100%' }} onClick={pay} disabled={paying} aria-busy={paying}>
+                {paying ? 'פותחים את דף התשלום…' : 'לתשלום מקדמה ושריון התאריך'}
+              </button>
+              {err && <p role="alert" style={{ margin: 0, fontSize: 14, color: '#fca5a5', textAlign: 'center' }}>{err}</p>}
+              <p className="note" style={{ margin: 0, textAlign: 'center' }}>
+                התאריך משוריין רק אחרי שהתשלום עובר. התשלום מאובטח דרך Morning, והקבלה נשלחת אליך אוטומטית.
+                {cfg.policy ? ' ' + cfg.policy : ''}
+              </p>
+              <a className="btn btn-glass btn-sm" href={waLink(msg)} target="_blank" rel="noopener" style={{ width: '100%' }}><IconWA size={18} />שאלה ליניר בוואטסאפ</a>
+            </>
+          ) : (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <h3 id="pv-title" className="d" style={{ margin: 0, fontSize: 22 }}>תצוגה מקדימה להודעה</h3>
+                <span className="chip" style={{ background: '#0f2a1c', color: '#6ee7a8' }}>וואטסאפ</span>
+              </div>
+              <div className="bubble" aria-live="polite">{msg}</div>
+              <a className="btn btn-wa" href={waLink(msg)} target="_blank" rel="noopener" style={{ width: '100%' }}>
+                <IconWA />שליחת הזמנה ישירה לוואטסאפ
+              </a>
+              <p style={{ margin: 0, fontSize: 14, color: 'var(--muted)', textAlign: 'center' }}>
+                {name ? 'הכול מוכן — לחיצה אחת ונפתח וואטסאפ עם כל הפרטים.' : 'טיפ: הוסיפו שם כדי שיניר ידע למי לחזור.'}
+              </p>
+            </>
+          )}
         </aside>
       </div>
     </section>

@@ -242,3 +242,12 @@ footer{background:#07070b;border-top:1px solid var(--panel-2);padding:40px 16px 
 .rel-play{width:68px;height:68px;border-radius:50%;background:var(--orange);color:#0b0b10;display:flex;align-items:center;justify-content:center;box-shadow:0 0 30px rgba(255,122,26,.55)}
 .rel-info{padding:18px 20px;display:flex;justify-content:space-between;align-items:center;gap:12px}
 @media (max-width:900px){.span2{grid-column:auto}}
+
+/* booking: payment result notices + taken time slots */
+.notice{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:18px 22px;border-radius:18px;margin-bottom:24px;font-size:17px}
+.notice strong{font-size:20px}
+.notice .icon-btn{margin-inline-start:auto}
+.notice.ok{background:#0f2a1c;border:1px solid #2f7a52;color:#dcf7e8}
+.notice.bad{background:#2a1214;border:1px solid #7a2f36;color:#fde2e4}
+.pill:disabled{opacity:.4;cursor:not-allowed;text-decoration:line-through}
+.btn:disabled{opacity:.7;cursor:wait}

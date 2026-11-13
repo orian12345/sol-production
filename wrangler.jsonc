@@ -1,9 +1,29 @@
-// הגדרות Cloudflare: אתר סטטי בלבד — מגישים את התיקייה dist שנבנתה ב-npm run build
-// כתובות נקיות: /bar-mitzvah מגיש את bar-mitzvah.html, ו-/ מגיש את index.html
+// הגדרות Cloudflare
+// - דפי האתר מוגשים מהתיקייה dist (נבנית ב-npm run build), עם כתובות נקיות (/bar-mitzvah)
+// - הכתובות /api/* עוברות לשרת ההזמנות שב-worker/index.js
+// - סודות (מפתחות Morning וגוגל) לא כאן! מגדירים עם: npx wrangler secret put <NAME>
 {
   "name": "sol-production",
+  "main": "worker/index.js",
   "compatibility_date": "2026-11-01",
   "assets": {
-    "directory": "./dist"
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"]
+  },
+  "kv_namespaces": [
+    { "binding": "BOOKINGS", "id": "4b1e8004be97414b8065f99b9806e0c4" }
+  ],
+  "vars": {
+    // סכום המקדמה בשקלים. 0 = התשלום כבוי והטופס עובד כמו קודם (וואטסאפ)
+    "DEPOSIT": "0",
+    // משפט מדיניות ביטולים שיוצג ליד כפתור התשלום (ריק = לא מוצג)
+    "CANCEL_POLICY": "",
+    // production = כסף אמיתי | sandbox = סביבת בדיקות של Morning
+    "MORNING_ENV": "production",
+    // סוג המסמך ש-Morning תפיק: 400 = קבלה (עוסק פטור) | 320 = חשבונית מס / קבלה (עוסק מורשה)
+    "MORNING_DOC_TYPE": "400",
+    // כתובת האתר שאליה הלקוח חוזר אחרי התשלום
+    "SITE_URL": "https://sol-production.oriannada11.workers.dev"
   }
 }
