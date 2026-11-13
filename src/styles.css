@@ -330,3 +330,27 @@ a.media-thumb:hover .rel-play{transform:scale(1.08)}
 .media-actions .pill{min-height:40px;padding:0 14px;font-size:14px}
 @media (max-width:1000px) and (min-width:701px){.music-grid{grid-template-columns:1fr 1fr}.about-card{grid-column:1 / -1}}
 @media (max-width:700px){.media-thumb{height:130px}.about-card{padding:20px !important}.about-card h3{font-size:24px}.about-card p{font-size:15px}}
+
+/* music section — compact */
+.music-compact .wrap{padding-bottom:40px !important}
+.music-compact .sec-head{margin-bottom:18px;gap:8px}
+.music-compact .h2{font-size:32px}
+.music-compact .music-grid{gap:16px}
+.music-compact .about-card{padding:22px !important;gap:8px}
+.music-compact .about-card h3{font-size:22px}
+.music-compact .about-card p{font-size:15px;line-height:1.65;color:var(--muted)}
+.music-compact .media-thumb{height:96px}
+.music-compact .media-thumb .wave{height:44px}
+.music-compact .rel-play{width:48px;height:48px}
+.music-compact .rel-play svg{width:20px;height:20px}
+.music-compact .media-tag{top:10px;right:10px;font-size:11px;padding:4px 8px}
+.music-compact .media-body{padding:14px 16px 16px;gap:2px}
+.music-compact .media-body h3{font-size:20px}
+.music-compact .media-sub{font-size:13px}
+.music-compact .media-actions{padding-top:10px;gap:6px}
+.music-compact .media-actions .pill,.music-compact .media-actions .btn-sm{min-height:36px;padding:0 12px;font-size:13px}
+@media (max-width:700px){
+  .music-compact .h2{font-size:24px}
+  .music-compact .media-thumb{height:80px}
+  .music-compact .swipe > *{flex-basis:78%}
+}

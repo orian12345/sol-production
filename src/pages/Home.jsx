@@ -90,21 +90,17 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="music" aria-labelledby="music-title" style={{ scrollMarginTop: 110 }}>
+        <section id="music" className="music-compact" aria-labelledby="music-title" style={{ scrollMarginTop: 110 }}>
           <div className="wrap" style={{ paddingBottom: 48 }}>
             <div className="sec-head">
               <span className="chip">המוזיקה של יניר · קאברים וסינגלים</span>
               <h2 id="music-title" className="d h2">אמן על הבמה, מפיק מאחורי הקונסולה</h2>
-              <p className="lead">השירים של יניר, וקאברים וסינגלים שיצאו תחת SOL Production.</p>
             </div>
             <div className="music-grid swipe">
               <article id="about" className="glass card lift about-card" style={{ scrollMarginTop: 110 }}>
                 <span className="chip">אודות</span>
                 <h3 className="d">יניר סול</h3>
-                <p>יניר סול הוא זמר, כותב, מלחין ומפיק מוזיקלי. <span style={{ whiteSpace: 'nowrap' }}>ב־SOL Production</span> באור יהודה הוא מלווה אמנים, להקות ומשפחות מהרעיון הראשון ועד המאסטר הסופי — כתיבה, עיבוד, הקלטה, מיקס, מאסטרינג והפקת קליפים תחת קורת גג אחת.</p>
-                <div className="row hide-m" style={{ gap: 8, marginTop: 'auto' }}>
-                  {['זמר ויוצר', 'מלחין', 'מפיק מוזיקלי', 'הפקת קליפים', 'בעלי אולפן'].map((t) => <span key={t} className="chip">{t}</span>)}
-                </div>
+                <p>זמר, כותב, מלחין ומפיק מוזיקלי. ב<span style={{ whiteSpace: 'nowrap' }}>־SOL Production</span> באור יהודה הוא מלווה אמנים, להקות ומשפחות מהרעיון הראשון ועד המאסטר.</p>
               </article>
 
               <article className="glass lift media">
