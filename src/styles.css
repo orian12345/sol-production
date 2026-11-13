@@ -374,3 +374,11 @@ a.media-thumb:hover .rel-play{transform:scale(1.08)}
 @media (max-width:1000px) and (min-width:701px){.room-grid{grid-template-columns:1fr 1fr}#gear{grid-column:1 / -1}}
 @media (max-width:700px){.studio-compact .h2{font-size:24px}.studio-compact .swipe > *{flex-basis:80%}}
 @media (min-width:701px){.studio-compact.sec{padding-top:48px;padding-bottom:64px}}
+
+/* fix: fieldsets default to min-content width, which pushed the service row off-screen on phones */
+fieldset{min-width:0}
+@media (max-width:700px){
+  .scroll-x{justify-content:flex-start !important}
+  .scroll-x::after{content:"";flex:0 0 1px}
+}
+.perk{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#c4b5fd;background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.3);border-radius:10px;padding:6px 10px;align-self:flex-start}

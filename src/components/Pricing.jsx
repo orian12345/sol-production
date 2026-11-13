@@ -44,6 +44,7 @@ export function Pricing({ selectedId, onPick }) {
                 {it.old && <s className="old">{'במקום ' + it.old}</s>}
               </div>
               {it.note && <div className="note">{it.note}</div>}
+              {c.perk && <div className="perk"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 14v-2a9 9 0 0 1 18 0v2" /><rect x="2" y="14" width="5" height="7" rx="2" /><rect x="17" y="14" width="5" height="7" rx="2" /></svg>{c.perk}</div>}
               <a className="btn btn-main btn-sm" href="#booking" aria-label={'בחירת ' + it.name + ' להזמנה'} onClick={() => onPick({ id: it.id })}>בחרו להזמנה</a>
             </article>
           ))}

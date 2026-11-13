@@ -186,26 +186,6 @@ export default function Home() {
 
         <Pricing selectedId={bk.selected?.id} onPick={pick} />
         <Booking st={bk} setSt={setBk} />
-        <section id="bar-mitzvah" className="wrap" aria-labelledby="bm-title" style={{ paddingBottom: 96, scrollMarginTop: 110 }}>
-          <div className="glass bm">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-              <h2 id="bm-title" className="d">שיר בר מצווה ובת מצווה — נכתב, מוקלט ומופק במיוחד בשבילכם</h2>
-              <p className="lead">שיר אישי לבר מצווה או לבת מצווה שמספר את הסיפור של חתן או כלת השמחה. יניר כותב את המילים, מלחין, מקליט אתכם באולפן ומפיק פלייבק אלקטרוני מלא — מוכן להשמעה באירוע, לסרטון ולשיתוף ברשתות.</p>
-              <div className="prow"><span className="price">₪2,950</span><span className="unit">כתיבה, הקלטה והפקת פלייבק</span></div>
-              <div className="row">
-                <a className="btn btn-main" href="#booking" onClick={() => pick({ id: 'barmitzvah' })}>שריינו תאריך הקלטה</a>
-                <a className="btn btn-glass" href="/bar-mitzvah">כל הפרטים על שיר בר / בת מצווה</a>
-              </div>
-            </div>
-            <ol className="steps hide-m">
-              <li><div><b>שיחת היכרות</b><span>מספרים על חתן / כלת השמחה, תחביבים, משפחה ורגעים מיוחדים.</span></div></li>
-              <li><div><b>כתיבה והלחנה</b><span>יניר כותב מילים ולחן אישיים, ושולח לאישור.</span></div></li>
-              <li><div><b>הקלטה באולפן</b><span>חוויה כיפית באולפן — גם בלי ניסיון בשירה, עם ליווי צמוד.</span></div></li>
-              <li><div><b>הפקה, מיקס ומאסטר</b><span>פלייבק אלקטרוני מלא, תיקונים וקובץ מוכן לאירוע.</span></div></li>
-            </ol>
-          </div>
-        </section>
-
         <Faq title="שאלות נפוצות על הקלטה באולפן" items={HOME_FAQ} />
         <Location
           chip="איך מגיעים"

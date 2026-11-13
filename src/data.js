@@ -33,7 +33,7 @@ export const PRICING = [
     { id: 'studio-hour', name: 'השכרת אולפן הקלטות', desc: 'בפיקוח סאונדמן', price: '₪250', unit: 'לשעה', service: 'single' },
     { id: 'combo-cover-clip', name: 'חבילת קאבר + קליפ אולפן', desc: 'הקלטת קאבר וצילום קליפ אולפן מקצועי בחבילה אחת', price: '₪2,100', old: '₪2,350', badge: 'חבילה · חיסכון של ₪250', service: 'cover' },
   ] },
-  { id: 'rehearsal', label: 'חדר חזרות', items: [
+  { id: 'rehearsal', label: 'חדר חזרות', perk: 'כולל עד 7 משדרי אוזניות (In-Ear)', items: [
     { id: 'reh-base', name: 'השכרת חדר חזרות', desc: 'בסיס, ללא סאונדמן', price: '₪120', unit: 'לשעה', service: 'rehearsal' },
     { id: 'reh-sound', name: 'חדר חזרות + סאונדמן צמוד', desc: 'סאונדמן צמוד לאורך כל החזרה', price: '₪200', unit: 'לשעה', service: 'rehearsal' },
     { id: 'reh-multitrack', name: 'הקלטת ערוצים מלאה בחדר חזרות', desc: 'מולטי־טראק, ללא עריכה', price: '₪850', note: 'מה מקבלים: הקלטה מתקדמת של ערוץ נפרד לכל נגן', service: 'rehearsal', rec: true },
