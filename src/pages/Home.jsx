@@ -151,7 +151,7 @@ export default function Home() {
               <ul className="ticks">
                 <li>טיפול אקוסטי מלא</li>
                 <li>בקליין מלא – תופים, מגברים, קלידים</li>
-                <li>מוניטורינג אישי לכל נגן</li>
+                <li>עד 7 משדרי אוזניות (In-Ear) – מוניטור אישי לכל נגן</li>
                 <li>כל ערוץ מנותב לחדר הבקרה להקלטה</li>
               </ul>
               <a className="btn btn-glass btn-sm" href="#booking" onClick={() => pick({ id: 'reh-base' })}>הזמנת חדר חזרות</a>
@@ -175,6 +175,7 @@ export default function Home() {
                   ['מיקרופון שירה', 'MXL Genesis'],
                   ['תוכנה', 'Cubase Pro'],
                   ['בקליין', 'תופים, מגברים, קלידים'],
+                  ['מוניטור אישי', 'עד 7 משדרי In-Ear'],
                 ].map(([k, v]) => (
                   <div key={k}><dt>{k}</dt><dd dir={/^[A-Za-z]/.test(v) ? 'ltr' : undefined}>{v}</dd></div>
                 ))}
@@ -191,7 +192,7 @@ export default function Home() {
               <span className="chip" style={{ background: 'var(--orange)', color: '#0b0b10' }}>הכי מבוקש</span>
               <h2 id="bm-title" className="d">שיר בר מצווה ובת מצווה — נכתב, מוקלט ומופק במיוחד בשבילכם</h2>
               <p className="lead">שיר אישי לבר מצווה או לבת מצווה שמספר את הסיפור של חתן או כלת השמחה. יניר כותב את המילים, מלחין, מקליט אתכם באולפן ומפיק פלייבק אלקטרוני מלא — מוכן להשמעה באירוע, לסרטון ולשיתוף ברשתות.</p>
-              <div className="prow"><span className="price">₪4,000</span><span className="unit">כתיבה, הקלטה והפקת פלייבק</span></div>
+              <div className="prow"><span className="price">₪2,950</span><span className="unit">כתיבה, הקלטה והפקת פלייבק</span></div>
               <div className="row">
                 <a className="btn btn-main" href="#booking" onClick={() => pick({ id: 'barmitzvah' })}>שריינו תאריך הקלטה</a>
                 <a className="btn btn-glass" href="/bar-mitzvah">כל הפרטים על שיר בר / בת מצווה</a>

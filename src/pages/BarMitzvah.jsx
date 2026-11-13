@@ -24,7 +24,7 @@ export default function BarMitzvah() {
             <nav aria-label="פירורי לחם" style={{ fontSize: 14, color: 'var(--muted)' }}><a href="/">ראשי</a> / שיר בר מצווה ובת מצווה</nav>
             <h1 id="hero-title" className="d">שיר בר מצווה ובת מצווה — <span className="grad">נכתב, מוקלט ומופק במיוחד בשבילכם</span></h1>
             <p className="lead" style={{ fontSize: 20, maxWidth: 640 }}>מתנה שנשארת לכל החיים: שיר אישי לחתן או לכלת השמחה, שנכתב על פי הסיפור שלהם, מוקלט באולפן הקלטות מקצועי של SOL Production באור יהודה ומופק עם פלייבק אלקטרוני מלא — מוכן להשמעה באירוע.</p>
-            <div className="prow"><span className="price">₪4,000</span><span className="unit">כתיבה, הלחנה, הקלטה באולפן והפקת פלייבק</span></div>
+            <div className="prow"><span className="price">₪2,950</span><span className="unit">כתיבה, הלחנה, הקלטה באולפן והפקת פלייבק</span></div>
             <div className="row">
               <a className="btn btn-main" href={BOOK}>שריינו תאריך הקלטה</a>
               <a className="btn btn-wa" href={waLink('היי יניר, אשמח לשמוע פרטים על שיר בר / בת מצווה')} target="_blank" rel="noopener"><IconWA />שאלה ליניר בוואטסאפ</a>
@@ -86,7 +86,7 @@ export default function BarMitzvah() {
         />
       </main>
       <Footer links={[['/', 'ראשי'], ['/#pricing', 'מחירון'], ['/accessibility', 'הצהרת נגישות']]} />
-      <BookBar text="שיר בר / בת מצווה" sub="· ₪4,000" href={BOOK} label="שריינו תאריך" />
+      <BookBar text="שיר בר / בת מצווה" sub="· ₪2,950" href={BOOK} label="שריינו תאריך" />
     </Layout>
   );
 }
