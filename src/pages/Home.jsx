@@ -93,10 +93,11 @@ export default function Home() {
         <section id="music" aria-labelledby="music-title" style={{ scrollMarginTop: 110 }}>
           <div className="wrap" style={{ paddingBottom: 48 }}>
             <div className="sec-head">
-              <span className="chip">המוזיקה של יניר</span>
+              <span className="chip">המוזיקה של יניר · קאברים וסינגלים</span>
               <h2 id="music-title" className="d h2">אמן על הבמה, מפיק מאחורי הקונסולה</h2>
+              <p className="lead">השירים של יניר, וקאברים וסינגלים שיצאו תחת SOL Production.</p>
             </div>
-            <div className="bento">
+            <div className="bento swipe">
               <article id="about" className="glass card lift span2" style={{ padding: 32, scrollMarginTop: 110 }}>
                 <h3 className="d" style={{ fontSize: 26, fontWeight: 400 }}>אודות יניר סול</h3>
                 <p style={{ fontSize: 18, lineHeight: 1.7, color: 'var(--ink)' }}>יניר סול הוא זמר, כותב, מלחין ומפיק מוזיקלי. ב־SOL Production באור יהודה הוא מלווה אמנים, להקות ומשפחות מהרעיון הראשון ועד המאסטר הסופי — כתיבה, עיבוד, הקלטה, מיקס, מאסטרינג והפקת קליפים תחת קורת גג אחת.</p>
@@ -116,21 +117,6 @@ export default function Home() {
                   <a className="pill" href={yt('יניר סול סביב')} target="_blank" rel="noopener">YouTube</a>
                 </div>
               </article>
-            </div>
-          </div>
-        </section>
-
-        <section aria-label="האולפן בפעולה" className="wrap hide-m" style={{ paddingBottom: 96 }}>
-          <div style={{ maxWidth: 760, margin: '0 auto' }}><StudioViz /></div>
-        </section>
-
-        <section aria-labelledby="releases-title" className="band">
-          <div className="wrap sec" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            <div>
-              <h2 id="releases-title" className="d" style={{ margin: 0, fontSize: 32, fontWeight: 400 }}>קאברים וסינגלים שיצאו תחת SOL Production</h2>
-              <p style={{ margin: '6px 0 0', fontSize: 17, color: 'var(--muted)' }}>הפקות שנולדו באולפן ויצאו לעולם.</p>
-            </div>
-            <div className="rel-grid">
               <a className="glass lift rel" href={yt('ליאן שמחון קמה מהפחד')} target="_blank" rel="noopener" aria-label="צפייה ביוטיוב: קמה מהפחד – ליאן שמחון">
                 <div className="rel-thumb">
                   <span className="rel-yt">YouTube</span>
@@ -147,6 +133,10 @@ export default function Home() {
               </a>
             </div>
           </div>
+        </section>
+
+        <section aria-label="האולפן בפעולה" className="wrap hide-m" style={{ paddingBottom: 96 }}>
+          <div style={{ maxWidth: 760, margin: '0 auto' }}><StudioViz /></div>
         </section>
 
         <section id="studio" className="wrap sec" aria-labelledby="studio-title">
