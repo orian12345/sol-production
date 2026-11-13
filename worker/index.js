@@ -418,6 +418,17 @@ async function notifyOwner(env, text) {
       + '&text=' + encodeURIComponent(text) + '&apikey=' + encodeURIComponent(env.CALLMEBOT_APIKEY);
     jobs.push(fetch(u).then(async (r) => { if (!r.ok) throw new Error('callmebot ' + r.status + ' ' + (await r.text()).slice(0, 200)); }));
   }
+  // וואטסאפ דרך Green-API (מחובר לוואטסאפ קיים דרך QR, כמו WhatsApp Web)
+  // סודות: GREENAPI_URL (למשל https://7103.api.greenapi.com), GREENAPI_ID, GREENAPI_TOKEN, NOTIFY_PHONE (למשל 972549030134)
+  if (env.GREENAPI_URL && env.GREENAPI_ID && env.GREENAPI_TOKEN && env.NOTIFY_PHONE) {
+    const base = String(env.GREENAPI_URL).replace(/\/$/, '');
+    const chatId = String(env.NOTIFY_PHONE).replace(/\D/g, '').replace(/^0/, '972') + '@c.us';
+    jobs.push(fetch(`${base}/waInstance${env.GREENAPI_ID}/sendMessage/${env.GREENAPI_TOKEN}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ chatId, message: text }),
+    }).then(async (r) => { if (!r.ok) throw new Error('greenapi ' + r.status + ' ' + (await r.text()).slice(0, 200)); }));
+  }
   if (env.RESEND_API_KEY && env.OWNER_EMAIL) {
     const subject = text.split('\n')[0].slice(0, 120);
     const html = '<div dir="rtl" style="font-family:Arial,sans-serif;font-size:15px;line-height:1.7">'
@@ -432,7 +443,7 @@ async function notifyOwner(env, text) {
   res.filter((x) => x.status === 'rejected').forEach((x) => console.error('notifyOwner failed:', x.reason && x.reason.message));
   return res.some((x) => x.status === 'fulfilled'); // הצליח בערוץ אחד לפחות
 }
-const notifyOn = (env) => !!((env.CALLMEBOT_PHONE && env.CALLMEBOT_APIKEY) || (env.RESEND_API_KEY && env.OWNER_EMAIL));
+const notifyOn = (env) => !!((env.CALLMEBOT_PHONE && env.CALLMEBOT_APIKEY) || (env.GREENAPI_URL && env.GREENAPI_ID && env.GREENAPI_TOKEN && env.NOTIFY_PHONE) || (env.RESEND_API_KEY && env.OWNER_EMAIL));
 
 /* בקשה בלי תשלום (טופס האולפן / כרטיס באקדמיה) → האתר שולח ליניר בוואטסאפ, הלקוח לא שולח כלום */
 async function sendRequest(request, env) {
