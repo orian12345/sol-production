@@ -16,6 +16,7 @@ export default defineConfig(({ isSsrBuild }) => ({
             accessibility: r('./accessibility.html'),
             quote: r('./quote.html'),
             cancellation: r('./cancellation.html'),
+            academy: r('./academy.html'),
           },
         },
       },

@@ -11,7 +11,7 @@ const entry = fs.readdirSync(ssrDir, { recursive: true })
 if (!entry) throw new Error('entry-server bundle not found in dist-ssr');
 const { render } = await import(pathToFileURL(path.join(ssrDir, entry)).href);
 
-const pages = { 'index.html': 'home', 'bar-mitzvah.html': 'barmitzvah', 'accessibility.html': 'accessibility', 'quote.html': 'quote', 'cancellation.html': 'cancellation' };
+const pages = { 'index.html': 'home', 'bar-mitzvah.html': 'barmitzvah', 'accessibility.html': 'accessibility', 'quote.html': 'quote', 'cancellation.html': 'cancellation', 'academy.html': 'academy' };
 for (const [file, page] of Object.entries(pages)) {
   const p = path.resolve('dist', file);
   const html = fs.readFileSync(p, 'utf8');

@@ -58,7 +58,7 @@ export default function Home() {
       <Header
         topbar
         brandHref="#top"
-        links={[['#about', 'אודות'], ['#music', 'המוזיקה שלי'], ['/bar-mitzvah', 'שיר בר / בת מצווה'], ['#studio', 'האולפן וחדר החזרות'], ['#gear', 'ציוד'], ['#pricing', 'מחירון'], ['#faq', 'שאלות נפוצות']]}
+        links={[['#about', 'אודות'], ['#music', 'המוזיקה שלי'], ['/bar-mitzvah', 'שיר בר / בת מצווה'], ['#studio', 'האולפן וחדר החזרות'], ['/academy', 'שיעורי נגינה'], ['#gear', 'ציוד'], ['#pricing', 'מחירון'], ['#faq', 'שאלות נפוצות']]}
         cta={{ href: '#booking', label: 'הזמנת חדר / אולפן' }}
         quick={QUICK}
         onPick={pick}
@@ -186,6 +186,14 @@ export default function Home() {
           </div>
         </section>
 
+        <section className="wrap" aria-label="שיעורי נגינה">
+          <a className="ac-teaser" href="/academy">
+            <span className="ac-teaser-tag">חדש</span>
+            <span className="ac-teaser-txt"><strong>SOL Academy · שיעורי נגינה באולפן</strong><span>תופים · גיטרה בס · גיטרה חשמלית ואקוסטית — אחד-על-אחד עם נגנים מהבמות הגדולות</span></span>
+            <span className="ac-teaser-go">למורים ולמחירים ←</span>
+          </a>
+        </section>
+
         <Pricing selectedIds={bk.selected.map((x) => x.id)} onPick={pick} />
         <Booking st={bk} setSt={setBk} />
         <Faq title="שאלות נפוצות על הקלטה באולפן" items={HOME_FAQ} />
@@ -196,7 +204,7 @@ export default function Home() {
         />
       </main>
 
-      <Footer links={[['/bar-mitzvah', 'שיר בר מצווה / בת מצווה'], ['#pricing', 'מחירון']]} />
+      <Footer links={[['/bar-mitzvah', 'שיר בר מצווה / בת מצווה'], ['/academy', 'שיעורי נגינה'], ['#pricing', 'מחירון']]} />
       <BookBar text="מוכנים להקליט?" sub="שריינו סשן באולפן" href="#booking" label="הזמינו סשן" />
     </Layout>
   );
