@@ -82,6 +82,14 @@ export default function Home() {
           </div>
         </section>
 
+        <section className="wrap ac-teaser-wrap" aria-label="שיעורי נגינה">
+          <a className="ac-teaser" href="/academy">
+            <span className="ac-teaser-tag">חדש</span>
+            <span className="ac-teaser-txt"><strong>SOL Academy · שיעורי נגינה באולפן</strong><span>תופים · גיטרה בס · גיטרה חשמלית ואקוסטית — אחד-על-אחד עם נגנים מהבמות הגדולות</span></span>
+            <span className="ac-teaser-go">למורים ולמחירים ←</span>
+          </a>
+        </section>
+
         <section id="home" className="wrap hero" aria-labelledby="hero-title">
           <div className="hero-txt">
             <h1 id="hero-title" className="d">יניר סול <span style={{ color: 'var(--violet-l)' }}>|</span> SOL Production — <span className="grad">אולפן הקלטות באור יהודה</span></h1>
@@ -189,14 +197,6 @@ export default function Home() {
               </dl>
             </article>
           </div>
-        </section>
-
-        <section className="wrap" aria-label="שיעורי נגינה">
-          <a className="ac-teaser" href="/academy">
-            <span className="ac-teaser-tag">חדש</span>
-            <span className="ac-teaser-txt"><strong>SOL Academy · שיעורי נגינה באולפן</strong><span>תופים · גיטרה בס · גיטרה חשמלית ואקוסטית — אחד-על-אחד עם נגנים מהבמות הגדולות</span></span>
-            <span className="ac-teaser-go">למורים ולמחירים ←</span>
-          </a>
         </section>
 
         <Pricing selectedIds={bk.selected.map((x) => x.id)} onPick={pick} />
