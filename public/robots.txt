@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
+Disallow: /quote
 
 Sitemap: https://www.solproduction.co.il/sitemap.xml

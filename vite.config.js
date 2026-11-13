@@ -14,6 +14,7 @@ export default defineConfig(({ isSsrBuild }) => ({
             main: r('./index.html'),
             barmitzvah: r('./bar-mitzvah.html'),
             accessibility: r('./accessibility.html'),
+            quote: r('./quote.html'),
           },
         },
       },

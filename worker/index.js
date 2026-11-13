@@ -33,6 +33,8 @@ export default {
       if (url.pathname === '/api/availability' && request.method === 'GET') return await availability(url, env);
       if (url.pathname === '/api/book' && request.method === 'POST') return await book(request, url, env);
       if (url.pathname === '/api/morning-notify' && request.method === 'POST') return await notify(request, url, env);
+      if (url.pathname === '/api/agreement' && request.method === 'POST') return await saveAgreement(request, env);
+      if (url.pathname.startsWith('/api/agreement/') && request.method === 'GET') return await getAgreement(url, env);
       if (url.pathname.startsWith('/api/')) return json({ error: 'not_found' }, 404);
     } catch (e) {
       console.error('api error', url.pathname, e && e.stack || e);
@@ -215,6 +217,48 @@ async function notify(request, url, env) {
   await env.BOOKINGS.put('booking:' + id, JSON.stringify(bk), { expirationTtl: 60 * 60 * 24 * 90 });
   await env.BOOKINGS.delete('hold:' + bk.date + ':' + id);
   return json({ ok: true });
+}
+
+/* ---------- הצעת מחיר + תקנון חתום ---------- */
+// נשמר עותק מלא של מה שהלקוח ראה וחתם עליו (כולל נוסח התקנון), עם חותמת זמן מהשרת.
+// הקישור /quote?a=<id> מבוסס על מזהה אקראי שאי אפשר לנחש — אפשר לשלוח אותו ליניר.
+
+async function saveAgreement(request, env) {
+  if (!env.BOOKINGS) return json({ error: 'not_configured' }, 503);
+  const raw = await request.text();
+  if (raw.length > 400000) return json({ error: 'too_large' }, 413);
+  let b;
+  try { b = JSON.parse(raw); } catch { return json({ error: 'bad_request' }, 400); }
+  const signer = String(b.signer || '').trim().slice(0, 100);
+  const sig = String(b.signature || '');
+  if (signer.length < 2 || !sig.startsWith('data:image/png;base64,') || sig.length > 300000) return json({ error: 'bad_signature' }, 400);
+  if (!b.quote || typeof b.quote !== 'object' || !Array.isArray(b.terms)) return json({ error: 'bad_request' }, 400);
+  const clip = (v, n) => String(v ?? '').slice(0, n);
+  const q = b.quote;
+  const quote = {
+    svcLabel: clip(q.svcLabel, 120), date: clip(q.date, 10), time: clip(q.time, 5), dur: clip(q.dur, 3), durLabel: clip(q.durLabel, 20),
+    band: clip(q.band, 40), rec: !!q.rec, isReh: !!q.isReh, name: clip(q.name, 100), phone: clip(q.phone, 30), email: clip(q.email, 120), notes: clip(q.notes, 500),
+    selected: q.selected ? { id: clip(q.selected.id, 40), name: clip(q.selected.name, 120), price: clip(q.selected.price, 60) } : null,
+  };
+  const terms = b.terms.slice(0, 20).map((s) => ({ title: clip(s.title, 120), items: (Array.isArray(s.items) ? s.items : []).slice(0, 20).map((t) => clip(t, 1000)) }));
+  const id = crypto.randomUUID();
+  const record = {
+    id, number: clip(b.number, 40), quote, terms, termsVersion: clip(b.termsVersion, 60),
+    signer, signature: sig, signedAt: Date.now(),
+    ip: request.headers.get('cf-connecting-ip') || '', ua: clip(request.headers.get('user-agent'), 300),
+  };
+  await env.BOOKINGS.put('agreement:' + id, JSON.stringify(record), { expirationTtl: 60 * 60 * 24 * 365 * 3 });
+  return json({ id, signedAt: record.signedAt });
+}
+
+async function getAgreement(url, env) {
+  if (!env.BOOKINGS) return json({ error: 'not_configured' }, 503);
+  const id = url.pathname.split('/').pop();
+  if (!/^[0-9a-f-]{36}$/.test(id)) return json({ error: 'not_found' }, 404);
+  const r = await env.BOOKINGS.get('agreement:' + id, 'json');
+  if (!r) return json({ error: 'not_found' }, 404);
+  const { ip, ua, ...pub } = r; // פרטים טכניים נשארים בשרת בלבד
+  return json(pub);
 }
 
 /* ---------- Morning API ---------- */

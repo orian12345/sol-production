@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { SERVICES, BANDS, DURS, waLink } from '../data.js';
 import { IconWA, IconClose } from './icons.jsx';
+import { TERMS } from '../terms.js';
 
 const OPEN = 10, CLOSE = 23;
 const ERRORS = {
@@ -99,6 +100,16 @@ export function Booking({ st, setSt }) {
   if (notes) lines.push('• הערות: ' + notes);
   lines.push('', 'תודה!');
   const msg = lines.join('\n');
+
+  // הצעת מחיר + אישור תקנון (מוצג ללקוחות רק אחרי שהתקנון אושר — אחרת רק בהדגמה)
+  const showQuote = TERMS.approved || demo;
+  const openQuote = () => {
+    const data = {
+      svcLabel, selected: st.selected, date: st.date, time: showHours ? time : '', dur: String(dur), durLabel: showHours ? durLabel : '',
+      band: isReh ? st.band : '', rec: isReh && st.rec, isReh, name, phone: (st.phone || '').trim(), email: (st.email || '').trim(), notes, demo,
+    };
+    window.location.href = '/quote#q=' + encodeURIComponent(JSON.stringify(data));
+  };
 
   const canPay = paid && st.date && time && name && (st.phone || '').replace(/\D/g, '').length >= 9;
 
@@ -293,6 +304,11 @@ export function Booking({ st, setSt }) {
                 {name ? 'הכול מוכן — לחיצה אחת ונפתח וואטסאפ עם כל הפרטים.' : 'טיפ: הוסיפו שם כדי שיניר ידע למי לחזור.'}
               </p>
             </>
+          )}
+          {showQuote && (
+            <button type="button" className="btn btn-glass btn-sm" style={{ width: '100%' }} onClick={openQuote}>
+              הצעת מחיר ואישור תנאים (PDF)
+            </button>
           )}
         </aside>
       </div>

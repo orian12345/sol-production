@@ -478,3 +478,51 @@ footer{background:#090c1e;border-top-color:var(--line-soft)}
 /* button gradient tuned so white text passes 4.5:1 across the whole button */
 :root{--cta:linear-gradient(100deg,#1f63e6 0%,#6a4dff 50%,#9333ea 100%)}
 .btn-main:hover,.qbtn-alt:hover{background:linear-gradient(100deg,#2f6ff0,#6a4dff 50%,#a03ff0)}
+
+/* ===== quote & agreement page ===== */
+.quote-page{padding-top:28px;padding-bottom:110px;max-width:900px}
+.quote-top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:20px}
+.quote{padding:32px;display:flex;flex-direction:column;gap:26px}
+.q-head{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:20px}
+.q-head h1{margin:0;font-size:38px;font-weight:400}
+.q-meta{font-size:13px;color:var(--muted);margin-top:4px}
+.q-biz{display:flex;flex-direction:column;gap:2px;font-size:14px;color:var(--muted);text-align:left}
+.q-biz strong{color:var(--ink);font-size:16px}
+.q-block h2{margin:0 0 12px;font:800 18px/1.3 "Heebo",sans-serif;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.q-ver{font:600 12px "Heebo";color:var(--muted)}
+.q-dl{margin:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px 24px}
+.q-dl div{display:flex;gap:10px;font-size:15px}
+.q-dl dt{color:var(--muted);min-width:56px}
+.q-dl dd{margin:0;font-weight:600}
+.q-table{width:100%;border-collapse:collapse;font-size:15px}
+.q-table th,.q-table td{padding:10px 8px;text-align:right;border-bottom:1px solid var(--line-soft)}
+.q-table th{font:700 13px "Heebo";color:var(--muted)}
+.q-table td:last-child,.q-table th:last-child{text-align:left;white-space:nowrap}
+.q-table tfoot td{font-weight:800;font-size:17px;border-bottom:0;padding-top:14px}
+.q-note{margin:10px 0 0;font-size:13px;color:var(--muted)}
+.q-terms h3{margin:12px 0 6px;font:700 15px "Heebo"}
+.q-terms ul{margin:0;padding-inline-start:20px;display:flex;flex-direction:column;gap:6px;font-size:14px;line-height:1.6;color:#d6dcf5}
+.q-sign{display:flex;flex-direction:column;gap:16px}
+.q-check{display:flex;gap:10px;align-items:flex-start;font-size:15px;cursor:pointer}
+.q-check input{width:20px;height:20px;margin-top:2px;accent-color:#6a4dff;flex:none}
+.sig{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.sig-pad{width:100%;height:160px;background:#f6f7ff;border-radius:14px;border:2px dashed #6a7bd6;touch-action:none;cursor:crosshair}
+.sig-img{max-width:320px;width:100%;background:#fff;border-radius:10px;padding:6px;border:1px solid var(--line)}
+.q-signed p{margin:0 0 10px}
+.q-err{margin:0;color:#fca5a5;font-size:14px}
+.q-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px}
+.q-hint{font-size:13px;color:var(--muted);margin-top:10px}
+@media (max-width:700px){.quote{padding:20px;gap:20px}.q-head h1{font-size:30px}.q-biz{text-align:right}.q-table{font-size:13px}}
+
+/* print / save as PDF: clean white document */
+@media print{
+  @page{size:A4;margin:14mm}
+  body,.root{background:#fff !important;color:#111 !important}
+  .no-print,.a11y,.bookbar,header.hdr,footer{display:none !important}
+  .quote-page{padding:0;max-width:none}
+  .glass.quote{background:#fff !important;border:0 !important;box-shadow:none !important;backdrop-filter:none !important;padding:0;color:#111}
+  .quote *{color:#111 !important;border-color:#d4d8e6 !important}
+  .q-meta,.q-biz,.q-ver,.q-note,.q-table th,.q-dl dt{color:#555 !important}
+  .q-block{break-inside:avoid}
+  .sig-img{border-color:#ccc !important}
+}
