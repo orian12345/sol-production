@@ -104,9 +104,14 @@ export default function Home() {
             </div>
             <div className="music-grid swipe">
               <article id="about" className="glass card lift about-card" style={{ scrollMarginTop: 110 }}>
-                <span className="chip">אודות</span>
-                <h3 className="d">יניר סול</h3>
-                <p>זמר, כותב, מלחין ומפיק מוזיקלי. ב<span style={{ whiteSpace: 'nowrap' }}>־SOL Production</span> באור יהודה הוא מלווה אמנים, להקות ומשפחות מהרעיון הראשון ועד המאסטר.</p>
+                <div className="about-flex">
+                  <img className="about-photo" src="/yanir.webp" alt="יניר סול באולפן SOL Production באור יהודה" width="480" height="600" loading="lazy" />
+                  <div className="about-txt">
+                    <span className="chip">אודות</span>
+                    <h3 className="d">יניר סול</h3>
+                    <p>זמר, כותב, מלחין ומפיק מוזיקלי. ב<span style={{ whiteSpace: 'nowrap' }}>־SOL Production</span> באור יהודה הוא מלווה אמנים, להקות ומשפחות מהרעיון הראשון ועד המאסטר.</p>
+                  </div>
+                </div>
               </article>
 
               <article className="glass lift media">
