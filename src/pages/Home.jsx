@@ -140,58 +140,46 @@ export default function Home() {
           <div style={{ maxWidth: 760, margin: '0 auto' }}><StudioViz /></div>
         </section>
 
-        <section id="studio" className="wrap sec" aria-labelledby="studio-title">
+        <section id="studio" className="wrap sec studio-compact" aria-labelledby="studio-title">
           <div className="sec-head">
-            <span className="chip">SOL Production · הראשונים 41, אור יהודה</span>
-            <h2 id="studio-title" className="d h2">אולפן ההקלטות וחדר החזרות</h2>
-            <p className="lead">שני חללים, חיבור אחד: מה שמנוגן בחדר החזרות מגיע ישירות לחדר הבקרה — ערוץ לכל כלי.</p>
+            <span className="chip">הראשונים 41, אור יהודה · ציוד מקצועי</span>
+            <h2 id="studio-title" className="d h2">האולפן וחדר החזרות</h2>
           </div>
-          <div className="grid swipe" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(320px,1fr))' }}>
-            <article className="glass card lift" style={{ padding: 32 }}>
-              <div className="ico"><IconSpeaker /></div>
-              <h3 className="d" style={{ fontSize: 28, fontWeight: 400 }}>חדר חזרות אקוסטי</h3>
-              <p>חלל מטופל אקוסטית, מוכן להרכב מלא — פשוט מגיעים, מתחברים ומנגנים.</p>
+          <div className="room-grid swipe">
+            <article className="glass lift room">
+              <div className="room-head"><div className="ico"><IconSpeaker /></div><h3>חדר חזרות אקוסטי</h3></div>
               <ul className="ticks">
-                <li>טיפול אקוסטי מלא בחדר</li>
+                <li>טיפול אקוסטי מלא</li>
                 <li>בקליין מלא – תופים, מגברים, קלידים</li>
                 <li>מוניטורינג אישי לכל נגן</li>
-                <li>ניתוב ערוצים ישיר לחדר הבקרה להקלטה מלאה</li>
+                <li>כל ערוץ מנותב לחדר הבקרה להקלטה</li>
               </ul>
-              <a className="btn btn-glass btn-sm" href="#booking" style={{ alignSelf: 'flex-start' }} onClick={() => pick({ id: 'reh-base' })}>הזמנת חדר חזרות</a>
+              <a className="btn btn-glass btn-sm" href="#booking" onClick={() => pick({ id: 'reh-base' })}>הזמנת חדר חזרות</a>
             </article>
-            <article className="glass card lift" style={{ padding: 32 }}>
-              <div className="ico"><IconMixer /></div>
-              <h3 className="d" style={{ fontSize: 28, fontWeight: 400 }}>אולפן הקלטות והפקה</h3>
-              <p>חדר בקרה ותא שירה להקלטה, הפקה ועיבוד — מהרעיון ועד המאסטר.</p>
+            <article className="glass lift room">
+              <div className="room-head"><div className="ico"><IconMixer /></div><h3>אולפן הקלטות והפקה</h3></div>
               <ul className="ticks">
-                <li>תא שירה (Vocal Booth)</li>
-                <li>כתיבה והלחנה מאפס, עיבוד מלא</li>
+                <li>חדר בקרה ותא שירה (Vocal Booth)</li>
+                <li>כתיבה, הלחנה ועיבוד מלא</li>
                 <li>כיוון קולות, מיקס ומאסטרינג</li>
-                <li>הקלטת שירי בר / בת מצווה, ברכות ושירים לאירועים</li>
+                <li>שירי בר / בת מצווה, ברכות ושירים לאירועים</li>
               </ul>
-              <a className="btn btn-glass btn-sm" href="#booking" style={{ alignSelf: 'flex-start' }} onClick={() => pick({ service: 'single' })}>הזמנת סשן באולפן</a>
+              <a className="btn btn-glass btn-sm" href="#booking" onClick={() => pick({ service: 'single' })}>הזמנת סשן באולפן</a>
             </article>
-          </div>
-        </section>
-
-        <section id="gear" className="band sec" aria-labelledby="gear-title">
-          <div className="wrap">
-            <div className="sec-head"><span className="chip">Tech Specs</span><h2 id="gear-title" className="d h2">המפרט הטכני של האולפן</h2></div>
-            <div className="grid swipe" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 20 }}>
-              {[
-                ['MIXING CONSOLE', 'Allen & Heath Qu-7', 'קונסולת מיקס דיגיטלית לניהול החדר, המוניטורים וניתוב הערוצים.'],
-                ['AUDIO INTERFACE', 'RME + TotalMix FX', 'כרטיס קול RME עם TotalMix FX — המרה נקייה וניתוב גמיש.'],
-                ['TUBE CONDENSER MIC', 'MXL Genesis', 'מיקרופון קונדנסר שפופרת לשירה חמה ומלאה.'],
-                ['DAW', 'Cubase Pro', 'תוכנת ההקלטה וההפקה — מהסקיצה ועד המאסטר.'],
-                ['BACKLINE', 'בקליין מלא', 'תופים, מגברים, קלידים ומערכת מוניטורים — מוכן להרכב מלא.'],
-              ].map(([k, t, d]) => (
-                <article key={k} className="glass card lift">
-                  <span className="spec-k">{k}</span>
-                  <h3 dir={k === 'BACKLINE' ? undefined : 'ltr'} style={k === 'BACKLINE' ? undefined : { textAlign: 'right' }}>{t}</h3>
-                  <p>{d}</p>
-                </article>
-              ))}
-            </div>
+            <article id="gear" className="glass lift room" style={{ scrollMarginTop: 110 }}>
+              <div className="room-head"><span className="chip">Tech Specs</span><h3>המפרט הטכני</h3></div>
+              <dl className="specs">
+                {[
+                  ['קונסולה', 'Allen & Heath Qu-7'],
+                  ['כרטיס קול', 'RME + TotalMix FX'],
+                  ['מיקרופון שירה', 'MXL Genesis'],
+                  ['תוכנה', 'Cubase Pro'],
+                  ['בקליין', 'תופים, מגברים, קלידים'],
+                ].map(([k, v]) => (
+                  <div key={k}><dt>{k}</dt><dd dir={/^[A-Za-z]/.test(v) ? 'ltr' : undefined}>{v}</dd></div>
+                ))}
+              </dl>
+            </article>
           </div>
         </section>
 
