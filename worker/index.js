@@ -219,6 +219,17 @@ async function notify(request, url, env) {
   bk.notifyPayload = payload;
   await env.BOOKINGS.put('booking:' + id, JSON.stringify(bk), { expirationTtl: 60 * 60 * 24 * 90 });
   await env.BOOKINGS.delete('hold:' + bk.date + ':' + id);
+  await notifyOwner(env, [
+    '🎙️ הזמנה חדשה באולפן – שולמה מקדמה',
+    ' ',
+    `מועד: ${ilDate(bk.start)} (${bk.dur} שעות)`,
+    `שירות: ${bk.service}`, bk.pkg && `מהמחירון: ${bk.pkg}`,
+    bk.band && `הרכב: ${bk.band} · הקלטת ערוצים: ${bk.rec ? 'כן' : 'לא'}`,
+    `לקוח: ${bk.name}`, `טלפון: ${bk.phone}`, bk.email && `מייל: ${bk.email}`,
+    bk.notes && `הערות: ${bk.notes}`,
+    clash && '⚠ יש חפיפה עם אירוע אחר ביומן',
+    ' ', `לכתוב ללקוח בוואטסאפ: ${telLink(bk.phone)}`,
+  ].filter(Boolean).join('\n')).catch((e) => console.error('notify studio', e));
   return json({ ok: true });
 }
 
@@ -329,6 +340,17 @@ async function academyNotify(request, url, env) {
   rec.status = 'paid'; rec.paidAt = Date.now();
   await env.BOOKINGS.put('academy:' + id, JSON.stringify(rec), { expirationTtl: 60 * 60 * 24 * 365 });
   await env.BOOKINGS.delete('hold:' + rec.date + ':' + id);
+  await notifyOwner(env, [
+    `🎸 SOL Academy – שיעור ${rec.instrument} חדש – שולמה מקדמה`,
+    ' ',
+    `מועד: ${ilDate(rec.start)}`,
+    `מורה: ${rec.teacher}`,
+    `חבילה: ${rec.tier} (₪${rec.tierPrice})`,
+    `שולם: ₪${rec.amount}` + (rec.tierPrice > rec.amount ? ` · יתרה ₪${rec.tierPrice - rec.amount}` : ''),
+    `תלמיד/ה: ${rec.name}`, `טלפון: ${rec.phone}`, rec.email && `מייל: ${rec.email}`,
+    clash && '⚠ יש חפיפה עם אירוע אחר ביומן',
+    ' ', `לכתוב לתלמיד/ה בוואטסאפ: ${telLink(rec.phone)}`,
+  ].filter(Boolean).join('\n')).catch((e) => console.error('notify academy', e));
   return json({ ok: true });
 }
 
@@ -361,6 +383,15 @@ async function saveAgreement(request, env) {
     ip: request.headers.get('cf-connecting-ip') || '', ua: clip(request.headers.get('user-agent'), 300),
   };
   await env.BOOKINGS.put('agreement:' + id, JSON.stringify(record), { expirationTtl: 60 * 60 * 24 * 365 * 3 });
+  const origin = new URL(request.url).origin;
+  await notifyOwner(env, [
+    '✍️ לקוח אישר הצעת מחיר ותקנון',
+    ' ',
+    `לקוח: ${signer}` + (quote.phone ? ` · ${quote.phone}` : ''),
+    `שירות: ${quote.selected.length ? quote.selected.map((x) => x.name).join(' + ') : quote.svcLabel}`,
+    quote.date && `תאריך מבוקש: ${quote.date.split('-').reverse().join('/')}${quote.time ? ' ' + quote.time : ''}`,
+    ' ', `העותק החתום: ${origin}/quote?a=${id}`,
+  ].filter(Boolean).join('\n')).catch((e) => console.error('notify agreement', e));
   return json({ id, signedAt: record.signedAt });
 }
 
@@ -373,6 +404,35 @@ async function getAgreement(url, env) {
   const { ip, ua, ...pub } = r; // פרטים טכניים נשארים בשרת בלבד
   return json(pub);
 }
+
+/* ---------- הודעה אוטומטית ליניר (לא הלקוח שולח — האתר שולח לבד) ---------- */
+// ערוצים (כל אחד פועל רק אם הוגדרו לו סודות):
+//   וואטסאפ דרך CallMeBot:  CALLMEBOT_PHONE (למשל 972549030134), CALLMEBOT_APIKEY
+//   מייל דרך Resend:          RESEND_API_KEY, OWNER_EMAIL (המייל של יניר)
+// שגיאה בשליחה לא מפילה את ההזמנה — היא כבר שמורה ביומן וב-Morning.
+async function notifyOwner(env, text) {
+  const jobs = [];
+  if (env.CALLMEBOT_PHONE && env.CALLMEBOT_APIKEY) {
+    const u = 'https://api.callmebot.com/whatsapp.php?phone=' + encodeURIComponent(env.CALLMEBOT_PHONE)
+      + '&text=' + encodeURIComponent(text) + '&apikey=' + encodeURIComponent(env.CALLMEBOT_APIKEY);
+    jobs.push(fetch(u).then(async (r) => { if (!r.ok) throw new Error('callmebot ' + r.status + ' ' + (await r.text()).slice(0, 200)); }));
+  }
+  if (env.RESEND_API_KEY && env.OWNER_EMAIL) {
+    const subject = text.split('\n')[0].slice(0, 120);
+    const html = '<div dir="rtl" style="font-family:Arial,sans-serif;font-size:15px;line-height:1.7">'
+      + text.split('\n').map((l) => l.replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]))).join('<br>') + '</div>';
+    jobs.push(fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { authorization: 'Bearer ' + env.RESEND_API_KEY, 'content-type': 'application/json' },
+      body: JSON.stringify({ from: env.NOTIFY_FROM || 'SOL Production <onboarding@resend.dev>', to: [env.OWNER_EMAIL], subject, html }),
+    }).then(async (r) => { if (!r.ok) throw new Error('resend ' + r.status + ' ' + (await r.text()).slice(0, 200)); }));
+  }
+  const res = await Promise.allSettled(jobs);
+  res.filter((x) => x.status === 'rejected').forEach((x) => console.error('notifyOwner failed:', x.reason && x.reason.message));
+  return jobs.length > 0;
+}
+const ilDate = (ms) => new Date(ms).toLocaleString('he-IL', { timeZone: TZ, weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+const telLink = (phone) => 'https://wa.me/' + String(phone).replace(/\D/g, '').replace(/^0/, '972');
 
 /* ---------- Morning API ---------- */
 
