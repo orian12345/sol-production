@@ -5,7 +5,14 @@ import { waLink, ADDRESS, CANCEL_POLICY } from '../data.js';
 import { academyData, academyText } from '../academy.js';
 
 const ils = (n) => '₪' + n.toLocaleString('en-US');
+
+// שעות לשיעורי נגינה: מ-14:00, שיעור של שעה, האחרון מתחיל ב-22:00 (האולפן נסגר ב-23:00)
+const LESSON_TIMES = Array.from({ length: 9 }, (_, i) => (14 + i) + ':00');
+const fmtDate = (d) => { const p = d.split('-'); return p[2] + '/' + p[1] + '/' + p[0]; };
+const todayIL = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
+
 const ERRORS = {
+  missing_slot: 'בחרו תאריך ושעה לשיעור.',
   missing_contact: 'צריך למלא שם מלא ומספר טלפון תקין.',
   payment_unavailable: 'לא הצלחנו לפתוח את דף התשלום. נסו שוב או שלחו הודעה בוואטסאפ.',
 };
@@ -20,6 +27,11 @@ function TeacherCard({ t, pay, onDemoPaid }) {
   const saving = single.price * tier.lessons - tier.price;
   const groupId = 'tier-' + t.id;
 
+  const [date, setDate] = useState('');
+  const [time, setTime] = useState('');
+  const [minDate, setMinDate] = useState('');
+  useEffect(() => setMinDate(todayIL()), []);
+  const when = date ? fmtDate(date) + (time ? ' בשעה ' + time : '') : '';
   const [form, setForm] = useState(false);
   const [c, setC] = useState({ name: '', phone: '', email: '' });
   const [busy, setBusy] = useState(false);
@@ -34,6 +46,7 @@ function TeacherCard({ t, pay, onDemoPaid }) {
     `• מורה: ${t.teacher}`,
     `• חבילה: ${tierName}`,
     `• מחיר: ${ils(tier.price)}${tier.lessons > 1 ? ` (${ils(perLesson)} לשיעור)` : ''}`,
+    `• מועד מבוקש: ${when || 'גמיש – נתאם יחד'}`,
     '',
     'תודה!',
   ].join('\n');
@@ -41,6 +54,7 @@ function TeacherCard({ t, pay, onDemoPaid }) {
   const submit = async (e) => {
     e.preventDefault();
     setErr('');
+    if (!date || !time) { setErr(ERRORS.missing_slot); return; }
     if (!c.name.trim() || c.phone.replace(/\D/g, '').length < 9) { setErr(ERRORS.missing_contact); return; }
     setBusy(true);
     if (pay.demo) { setTimeout(() => { setBusy(false); setForm(false); onDemoPaid(); }, 900); return; }
@@ -48,7 +62,7 @@ function TeacherCard({ t, pay, onDemoPaid }) {
       const r = await fetch('/api/academy-pay', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ teacher: t.teacher, instrument: t.instrument, tier: tierName, price: tier.price, ...c }),
+        body: JSON.stringify({ teacher: t.teacher, instrument: t.instrument, tier: tierName, price: tier.price, date, time, ...c }),
       });
       const j = await r.json().catch(() => ({}));
       if (r.ok && j.url) { window.location.href = j.url; return; }
@@ -100,6 +114,18 @@ function TeacherCard({ t, pay, onDemoPaid }) {
         </span>
       </div>
 
+      <fieldset className="ac-when">
+        <legend className="ac-legend">מועד מבוקש לשיעור</legend>
+        <div className="ac-when-row">
+          <input className="ac-field" type="date" aria-label={'תאריך לשיעור עם ' + t.teacher} min={minDate || undefined} value={date} onChange={(e) => { setDate(e.target.value); setErr(''); }} />
+          <select className="ac-field" aria-label={'שעה לשיעור עם ' + t.teacher} value={time} onChange={(e) => { setTime(e.target.value); setErr(''); }}>
+            <option value="">שעה</option>
+            {LESSON_TIMES.map((h) => <option key={h} value={h}>{h}</option>)}
+          </select>
+        </div>
+        <span className="ac-when-note">שיעורים החל מ-14:00 · המועד סופי לאחר אישור המורה</span>
+      </fieldset>
+
       {pay.on && !form && (
         <button type="button" className="ac-cta" onClick={() => setForm(true)}>
           {deposit < tier.price ? `תשלום מקדמה (${ils(deposit)}) ושריון מקום` : `תשלום (${ils(deposit)}) ושריון מקום`}
@@ -110,6 +136,7 @@ function TeacherCard({ t, pay, onDemoPaid }) {
           <div className="ac-pay-head">
             <strong>{deposit < tier.price ? `מקדמה ${ils(deposit)}` : `תשלום ${ils(deposit)}`}</strong>
             <span>{tierName}{deposit < tier.price ? ` · יתרה ${ils(tier.price - deposit)} בתיאום` : ''}</span>
+            <span>{when ? 'מועד: ' + when : 'בחרו תאריך ושעה למעלה'}</span>
             <button type="button" className="ac-x" aria-label="סגירה" onClick={() => setForm(false)}><IconClose /></button>
           </div>
           <label className="ac-lbl" htmlFor={'acn-' + t.id}>שם מלא</label>

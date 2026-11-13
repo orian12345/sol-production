@@ -239,17 +239,24 @@ async function academyPay(request, url, env) {
   const teacher = clip(b.teacher, 60), instrument = clip(b.instrument, 60), tier = clip(b.tier, 80);
   const tierPrice = Math.max(0, Number(b.price) || 0);
   if (!teacher || !tier || !tierPrice) return json({ error: 'bad_request' }, 400);
+  // מועד מבוקש: שיעורים מ-14:00 עד 22:00 (התחלה), לא בעבר
+  const date = clip(b.date, 10), time = clip(b.time, 5);
+  const hour = parseInt(time, 10);
+  if (!validDate(date) || !/^\d{1,2}:00$/.test(time) || hour < 14 || hour > 22) return json({ error: 'missing_slot' }, 400);
+  if (israelTime(date, (hour < 10 ? '0' : '') + time).getTime() < Date.now()) return json({ error: 'missing_slot' }, 400);
+  const [yy, mm, dd] = date.split('-');
+  const when = `${dd}/${mm}/${yy} ${time}`;
   const amount = Math.min(cfg.deposit, tierPrice);
   const id = crypto.randomUUID(), secret = crypto.randomUUID().replace(/-/g, '');
-  const rec = { id, secret, status: 'pending', created: Date.now(), name, phone, email, teacher, instrument, tier, tierPrice, amount };
+  const rec = { id, secret, status: 'pending', created: Date.now(), name, phone, email, teacher, instrument, tier, tierPrice, amount, date, time };
   await env.BOOKINGS.put('academy:' + id, JSON.stringify(rec), { expirationTtl: 60 * 60 * 24 * 90 });
   const site = (env.SITE_URL || url.origin).replace(/\/$/, '');
   const balance = tierPrice - amount;
   const form = await morning(env, '/payments/form', {
-    description: `מקדמה – SOL Academy: ${instrument} עם ${teacher} (${tier})`,
+    description: `מקדמה – SOL Academy: ${instrument} עם ${teacher} (${tier}) – ${when}`,
     type: Number(env.MORNING_DOC_TYPE || 400), amount, currency: 'ILS', vatType: 0, lang: 'he', maxPayments: 1,
     client: { name, phone, mobile: phone, emails: email ? [email] : undefined, add: true },
-    remarks: `${tier} · מחיר החבילה ₪${tierPrice}` + (balance > 0 ? ` · יתרה לתשלום ₪${balance}` : ''),
+    remarks: `${tier} · מועד מבוקש ${when} (בכפוף לאישור המורה) · מחיר החבילה ₪${tierPrice}` + (balance > 0 ? ` · יתרה לתשלום ₪${balance}` : ''),
     successUrl: `${site}/academy?paid=1`,
     failureUrl: `${site}/academy?payfail=1`,
     notifyUrl: `${url.origin}/api/academy-notify?id=${id}&k=${secret}`,
