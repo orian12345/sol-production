@@ -12,7 +12,7 @@ const ERRORS = {
 
 /* טופס ההזמנה.
    כשהשרת מחובר ל-Morning וליומן של יניר: מציג רק שעות פנויות, ומשריין רק אחרי תשלום מקדמה.
-   כשלא מחובר (או באתר בלי שרת): עובד כמו קודם — הודעה מוכנה לוואטסאפ. */
+   כשלא מחובר (או באתר בלי שרת): עובד כמו קודם — הודעה מוכנה לוואטסאפ (ההודעה עצמה לא מוצגת ללקוח, רק סיכום). */
 export function Booking({ st, setSt }) {
   const set = (patch) => setSt((s) => ({ ...s, ...patch }));
   const [cfg, setCfg] = useState({ configured: false, deposit: 0, policy: '' });
@@ -27,9 +27,18 @@ export function Booking({ st, setSt }) {
   const showHours = paid || isReh || st.service === 'write';
   const dur = parseInt(st.dur, 10) || 2;
 
+  // מצב הדגמה (?demo=1): מראה את תהליך השריון בלי תשלום אמיתי ובלי לגעת ביומן
+  const [demo, setDemo] = useState(false);
+
   // האם יש שרת הזמנות + חזרה מדף התשלום
   useEffect(() => {
     const q = new URLSearchParams(window.location.search);
+    if (q.get('demo')) {
+      setDemo(true);
+      setCfg({ configured: true, deposit: 200, policy: '' });
+      setTimeout(() => document.getElementById('booking')?.scrollIntoView({ behavior: 'smooth' }), 100);
+      return;
+    }
     if (q.get('booked')) setResult('booked');
     else if (q.get('payfail')) setResult('failed');
     if (q.get('booked') || q.get('payfail')) {
@@ -46,13 +55,23 @@ export function Booking({ st, setSt }) {
     if (!paid || !st.date) { setSlots(null); return; }
     let live = true;
     setLoadingSlots(true);
+    if (demo) {
+      // הדגמה: 14:00–17:00 "תפוסות"
+      const t = setTimeout(() => {
+        if (!live) return;
+        const s = [];
+        for (let h = OPEN; h + dur <= CLOSE; h++) s.push({ time: (h < 10 ? '0' : '') + h + ':00', free: !(h + dur > 14 && h < 18) });
+        setSlots(s); setLoadingSlots(false);
+      }, 400);
+      return () => { live = false; clearTimeout(t); };
+    }
     fetch(`/api/availability?date=${st.date}&dur=${dur}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => { if (live) setSlots(j && j.slots ? j.slots : []); })
       .catch(() => { if (live) setSlots([]); })
       .finally(() => { if (live) setLoadingSlots(false); });
     return () => { live = false; };
-  }, [paid, st.date, dur]);
+  }, [paid, demo, st.date, dur]);
 
   const allTimes = [];
   for (let h = OPEN; h + dur <= CLOSE; h++) allTimes.push((h < 10 ? '0' : '') + h + ':00');
@@ -87,6 +106,14 @@ export function Booking({ st, setSt }) {
     setErr('');
     if (!canPay) { setErr(!st.date || !time ? ERRORS.bad_slot : ERRORS.missing_contact); return; }
     setPaying(true);
+    if (demo) {
+      // הדגמה: במקום דף התשלום — מדלגים ישר להודעת ההצלחה
+      setTimeout(() => {
+        setPaying(false); setResult('booked');
+        document.getElementById('booking')?.scrollIntoView({ behavior: 'smooth' });
+      }, 1200);
+      return;
+    }
     try {
       const r = await fetch('/api/book', {
         method: 'POST',
@@ -123,6 +150,12 @@ export function Booking({ st, setSt }) {
         </p>
       </div>
 
+      {demo && (
+        <div className="notice demo" role="note">
+          <strong>מצב הדגמה</strong>
+          <span>כך ייראה השריון ללקוחות. אין כאן תשלום אמיתי ושום דבר לא נכנס ליומן — במקום דף התשלום של Morning קופצים ישר להודעת האישור.</span>
+        </div>
+      )}
       {result === 'booked' && (
         <div className="notice ok" role="status">
           <strong>התאריך שוריין ✓</strong>
@@ -246,13 +279,15 @@ export function Booking({ st, setSt }) {
             </>
           ) : (
             <>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <h3 id="pv-title" className="d" style={{ margin: 0, fontSize: 22 }}>תצוגה מקדימה להודעה</h3>
-                <span className="chip" style={{ background: '#0f2a1c', color: '#6ee7a8' }}>וואטסאפ</span>
-              </div>
-              <div className="bubble" aria-live="polite">{msg}</div>
+              <h3 id="pv-title" className="d" style={{ margin: 0, fontSize: 22 }}>סיכום ההזמנה</h3>
+              <ul className="ticks" style={{ fontSize: 15 }} aria-live="polite">
+                <li>{svcLabel}</li>
+                <li>{dateLabel}{showHours ? ` · ${time} · ${durLabel}` : ''}</li>
+                {isReh && <li>{st.band} · הקלטת ערוצים: {st.rec ? 'כן' : 'לא'}</li>}
+                <li>{name || 'שם — עוד לא הוזן'}</li>
+              </ul>
               <a className="btn btn-wa" href={waLink(msg)} target="_blank" rel="noopener" style={{ width: '100%' }}>
-                <IconWA />שליחת הזמנה ישירה לוואטסאפ
+                <IconWA />שליחת ההזמנה ליניר
               </a>
               <p style={{ margin: 0, fontSize: 14, color: 'var(--muted)', textAlign: 'center' }}>
                 {name ? 'הכול מוכן — לחיצה אחת ונפתח וואטסאפ עם כל הפרטים.' : 'טיפ: הוסיפו שם כדי שיניר ידע למי לחזור.'}

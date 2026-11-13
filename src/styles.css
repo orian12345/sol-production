@@ -251,3 +251,4 @@ footer{background:#07070b;border-top:1px solid var(--panel-2);padding:40px 16px 
 .notice.bad{background:#2a1214;border:1px solid #7a2f36;color:#fde2e4}
 .pill:disabled{opacity:.4;cursor:not-allowed;text-decoration:line-through}
 .btn:disabled{opacity:.7;cursor:wait}
+.notice.demo{background:#1d1533;border:1px dashed var(--violet-2);color:#e9e2ff}
