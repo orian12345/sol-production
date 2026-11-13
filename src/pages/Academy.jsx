@@ -30,7 +30,7 @@ function TeacherCard({ t }) {
     <article className="ac-card" aria-labelledby={'ac-h-' + t.id}>
       <header className="ac-head">
         {t.photo
-          ? <img className="ac-photo" src={t.photo} alt={t.teacher + ' – ' + t.instrument} width="76" height="76" loading="lazy" />
+          ? <img className="ac-photo" src={t.photo} alt={t.teacher + ' – ' + t.instrument} width="76" height="76" loading="lazy" style={t.photoPos ? { objectPosition: t.photoPos } : undefined} />
           : <span className="ac-photo ac-photo-empty" aria-hidden="true">{t.teacher.charAt(0)}</span>}
         <div>
           <span className="ac-instr">{t.instrument}</span>
