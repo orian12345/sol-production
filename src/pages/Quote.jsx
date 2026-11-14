@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Layout, Brand } from '../components/Layout.jsx';
 import { IconWA } from '../components/icons.jsx';
-import { ALL_ITEMS, WA, waLink } from '../data.js';
+import { ALL_ITEMS, WA, waLink, findCoupon } from '../data.js';
 import { TERMS } from '../terms.js';
 
 /* =====================================================================
@@ -118,6 +118,8 @@ export default function Quote() {
   }
 
   const { lines, total, open } = quoteLines(q);
+  const coupon = findCoupon(q.coupon);
+  const discount = coupon && total ? Math.round(total * coupon.percent / 100) : 0;
   const validUntil = new Date(meta.issued + TERMS.quote.validDays * 86400000).toLocaleDateString('he-IL', { timeZone: 'Asia/Jerusalem' });
   const termsVersion = signed ? signed.termsVersion : TERMS.version;
   const canSign = agree && signer.trim().length >= 2 && sig;
@@ -195,7 +197,18 @@ export default function Quote() {
               <tbody>
                 {lines.map((l, i) => <tr key={i}><td>{l.desc}</td><td>{l.qty}</td><td>{l.unit}</td><td>{l.total}</td></tr>)}
               </tbody>
-              {total != null && <tfoot><tr><td colSpan="3">{open ? 'סה״כ לפריטים במחיר קבוע' : 'סה״כ לתשלום'}</td><td>{ils(total)}</td></tr></tfoot>}
+              {total != null && (
+                <tfoot>
+                  {discount > 0 && (
+                    <>
+                      <tr className="q-sub"><td colSpan="3">סה״כ לפני הנחה</td><td>{ils(total)}</td></tr>
+                      <tr className="q-sub"><td colSpan="3">הנחת קופון <span dir="ltr">{coupon.label}</span> ({coupon.percent}%)</td><td dir="ltr">−{ils(discount)}</td></tr>
+                    </>
+                  )}
+                  <tr><td colSpan="3">{open ? 'סה״כ לפריטים במחיר קבוע' : 'סה״כ לתשלום'}</td><td>{ils(total - discount)}</td></tr>
+                </tfoot>
+              )}
+              {coupon && !total && <caption className="q-note" style={{ captionSide: 'bottom', textAlign: 'right' }}>קופון {coupon.label} ({coupon.percent}% הנחה) יחושב בהצעת המחיר הסופית.</caption>}
             </table>
             {TERMS.quote.vatNote && <p className="q-note">{TERMS.quote.vatNote}</p>}
             {!asList(q.selected).length && <p className="q-note">לא נבחרה חבילה מהמחירון – המחיר הסופי ייקבע מול יניר סול.</p>}

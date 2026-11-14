@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { SERVICES, BANDS, DURS, waLink, CANCEL_POLICY } from '../data.js';
+import { SERVICES, BANDS, DURS, waLink, CANCEL_POLICY, findCoupon, discountText } from '../data.js';
 import { IconWA, IconClose } from './icons.jsx';
 import { TERMS } from '../terms.js';
 
@@ -27,6 +27,18 @@ export function Booking({ st, setSt }) {
   const paid = cfg.configured;
   const services = st.services || [];   // בכניסה לאתר שום שירות לא מסומן — הלקוח בוחר
   const selected = st.selected || [];
+  // קופון (למשל Mayan = 10% על החבילות שנבחרו מהמחירון)
+  const coupon = st.coupon ? findCoupon(st.coupon) : null;
+  const [couponInput, setCouponInput] = useState('');
+  const [couponMsg, setCouponMsg] = useState('');
+  const applyCoupon = () => {
+    const c = findCoupon(couponInput);
+    if (c) { set({ coupon: c.code }); setCouponMsg(''); }
+    else setCouponMsg(couponInput.trim() ? 'הקוד לא תקין' : 'הקלידו קוד קופון');
+  };
+  const priceOf = (x) => (coupon ? discountText(x.price, coupon.percent) : x.price);
+  const priceLine = (x) => (coupon && priceOf(x) !== x.price ? `${priceOf(x)} במקום ${x.price}` : x.price);
+  const couponLine = coupon ? `קופון ${coupon.label} – ${coupon.percent}% הנחה על החבילות שנבחרו` : '';
   const isReh = services.includes('rehearsal');
   const showHours = paid || isReh || services.includes('write');
   // לחיצה על שירות מוסיפה/מורידה אותו
@@ -94,7 +106,8 @@ export function Booking({ st, setSt }) {
   const durLabel = DURS.find((x) => x[0] === st.dur)[1];
 
   const lines = ['היי יניר, אשמח לשריין סשן ב־SOL Production:', '', (services.length > 1 ? '• שירותים: ' : '• שירות: ') + svcLabel];
-  if (selected.length) { lines.push('• מהמחירון:'); selected.forEach((x) => lines.push(`   – ${x.name} (${x.price})`)); }
+  if (selected.length) { lines.push('• מהמחירון:'); selected.forEach((x) => lines.push(`   – ${x.name} (${priceLine(x)})`)); }
+  if (coupon) lines.push('• ' + couponLine);
   if (isReh) {
     lines.push('• הרכב: ' + st.band);
     lines.push('• הקלטת ערוצים מלאה (Multi-Track): ' + (st.rec ? 'כן' : 'לא'));
@@ -117,7 +130,8 @@ export function Booking({ st, setSt }) {
     if (!services.length) { setSendErr(ERRORS.no_service); return; }
     if (!name || (st.phone || '').replace(/\D/g, '').length < 9) { setSendErr(ERRORS.missing_contact); return; }
     const reqLines = [(services.length > 1 ? 'שירותים: ' : 'שירות: ') + svcLabel];
-    selected.forEach((x) => reqLines.push(`מהמחירון: ${x.name} (${x.price})`));
+    selected.forEach((x) => reqLines.push(`מהמחירון: ${x.name} (${priceLine(x)})`));
+    if (coupon) reqLines.push(couponLine);
     if (isReh) reqLines.push(`הרכב: ${st.band} · הקלטת ערוצים: ${st.rec ? 'כן' : 'לא'}`);
     reqLines.push('תאריך: ' + dateLabel + (showHours ? ` · ${time} · ${durLabel}` : ''));
     if (st.email && st.email.trim()) reqLines.push('מייל: ' + st.email.trim());
@@ -139,7 +153,7 @@ export function Booking({ st, setSt }) {
   const showQuote = TERMS.approved || demo;
   const openQuote = () => {
     const data = {
-      svcLabel, selected, date: st.date, time: showHours ? time : '', dur: String(dur), durLabel: showHours ? durLabel : '',
+      svcLabel, selected, coupon: coupon ? coupon.code : '', date: st.date, time: showHours ? time : '', dur: String(dur), durLabel: showHours ? durLabel : '',
       band: isReh ? st.band : '', rec: isReh && st.rec, isReh, name, phone: (st.phone || '').trim(), email: (st.email || '').trim(), notes, demo,
     };
     window.location.href = '/quote#q=' + encodeURIComponent(JSON.stringify(data));
@@ -164,7 +178,7 @@ export function Booking({ st, setSt }) {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          serviceLabel: svcLabel, selected: selected.map((x) => `${x.name} (${x.price})`).join(' · '),
+          serviceLabel: svcLabel, selected: selected.map((x) => `${x.name} (${priceLine(x)})`).join(' · ') + (coupon ? ' · ' + couponLine : ''),
           date: st.date, time, dur, name, phone: st.phone, email: st.email, notes,
           band: isReh ? st.band : '', rec: isReh && st.rec,
         }),
@@ -300,6 +314,24 @@ export function Booking({ st, setSt }) {
               <input id="bk-notes" className="field" type="text" placeholder="שם חתן/כלת השמחה, שם הלהקה, ז'אנר…" value={st.notes} onChange={(e) => set({ notes: e.target.value })} />
             </div>
           </div>
+
+          <div className="coupon">
+            <label className="lbl" htmlFor="bk-coupon">קוד קופון (לא חובה)</label>
+            {coupon ? (
+              <div className="coupon-on" role="status">
+                <span>✓ קופון <b dir="ltr">{coupon.label}</b> הופעל – {coupon.percent}% הנחה על החבילות שנבחרו</span>
+                <button type="button" className="icon-btn" aria-label="הסרת הקופון" onClick={() => { set({ coupon: '' }); setCouponInput(''); }}><IconClose /></button>
+              </div>
+            ) : (
+              <div className="coupon-row">
+                <input id="bk-coupon" className="field" type="text" dir="ltr" autoComplete="off" placeholder="קוד" value={couponInput}
+                  onChange={(e) => { setCouponInput(e.target.value); setCouponMsg(''); }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); applyCoupon(); } }} />
+                <button type="button" className="pill" onClick={applyCoupon}>הפעלה</button>
+              </div>
+            )}
+            {couponMsg && <p role="alert" className="coupon-err">{couponMsg}</p>}
+          </div>
         </form>
 
         <aside className="glass" aria-labelledby="pv-title">
@@ -308,7 +340,12 @@ export function Booking({ st, setSt }) {
               <span className="lbl" style={{ margin: 0 }}>מהמחירון ({selected.length})</span>
               {selected.map((x) => (
                 <div key={x.id} className="selbox">
-                  <span style={{ fontSize: 14 }}>{x.name + ' · ' + x.price}</span>
+                  <span style={{ fontSize: 14 }}>
+                    {x.name + ' · '}
+                    {coupon && priceOf(x) !== x.price
+                      ? <><b className="coupon-price">{priceOf(x)}</b> <s className="old" style={{ fontSize: 13 }}>{x.price}</s></>
+                      : x.price}
+                  </span>
                   <button type="button" className="icon-btn" aria-label={'הסרת ' + x.name} onClick={() => removeSel(x.id)}><IconClose /></button>
                 </div>
               ))}

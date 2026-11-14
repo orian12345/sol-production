@@ -667,3 +667,23 @@ footer{background:#090c1e;border-top-color:var(--line-soft)}
 /* music section (about + songs) now sits above the headline */
 .music-compact .wrap{padding-top:22px}
 @media (max-width:700px){.music-compact .wrap{padding-top:14px}}
+/* coupon field */
+.coupon{display:flex;flex-direction:column;gap:0}
+.coupon-row{display:flex;gap:8px;max-width:340px}
+.coupon-row .field{flex:1;text-transform:uppercase}
+.coupon-row .pill{flex:none;min-height:50px}
+.coupon-on{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;border-radius:14px;background:rgba(56,217,255,.08);border:1px solid rgba(56,217,255,.4);color:#d8f6ff;font-size:14px;max-width:520px}
+.coupon-err{margin:6px 0 0;font-size:13px;color:#fca5a5}
+.coupon-price{color:#7dd3fc}
+.q-table tfoot tr.q-sub td{font-weight:500;font-size:14px;padding-top:6px;color:#aeb7dc}
+/* academy coupon */
+.ac-coupon{display:flex;flex-direction:column;gap:6px;margin:-14px 0 24px;max-width:420px}
+.ac-coupon-row{display:flex;gap:8px}
+.ac-coupon-row .ac-field{flex:1;text-transform:uppercase}
+.ac-coupon-btn{flex:none;min-height:46px;padding:0 18px;border-radius:12px;border:1px solid rgba(212,175,55,.5);background:transparent;color:#f0d77a;font:700 14px "Heebo";cursor:pointer}
+.ac-coupon-btn:hover{background:rgba(212,175,55,.1)}
+.ac-coupon-on{position:relative;display:flex;align-items:center;gap:10px;padding:12px 16px;padding-inline-end:56px;border-radius:14px;background:rgba(212,175,55,.1);border:1px solid #D4AF37;color:#f5ecc8;font-size:14px}
+.ac-coupon-on .ac-x{top:50%;transform:translateY(-50%);inset-inline-end:8px}
+.ac-was{margin-inline-start:6px;font-size:12px;font-weight:500;color:#9a937f}
+.ac-coupon-tag{font-size:12.5px;font-weight:700;color:#f0d77a}
+@media (max-width:700px){.ac-coupon{margin:-6px 0 18px}}

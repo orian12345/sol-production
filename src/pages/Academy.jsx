@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Layout, Header, Footer, BookBar } from '../components/Layout.jsx';
 import { IconWA, IconClose } from '../components/icons.jsx';
-import { waLink, ADDRESS, CANCEL_POLICY } from '../data.js';
+import { waLink, ADDRESS, CANCEL_POLICY, findCoupon } from '../data.js';
 import { academyData, academyText } from '../academy.js';
 
 const ils = (n) => '₪' + n.toLocaleString('en-US');
@@ -19,7 +19,9 @@ const ERRORS = {
 };
 
 /* pay = { on, deposit, demo } — מקדמה דרך Morning (כבוי עד שמגדירים ACADEMY_DEPOSIT ומחברים את Morning) */
-function TeacherCard({ t, pay, onDemoPaid, onSent }) {
+function TeacherCard({ t, pay, onDemoPaid, onSent, coupon }) {
+  // מחיר אחרי קופון (שיעור היכרות כבר במחיר מיוחד — הקופון לא חל עליו)
+  const off = (n, x) => (coupon && !(x && x.intro) ? Math.round(n * (100 - coupon.percent) / 100) : n);
   const recommended = t.tiers.find((x) => x.recommended) || t.tiers[0];
   const [tierId, setTierId] = useState(recommended.id);
   const tier = t.tiers.find((x) => x.id === tierId);
@@ -54,8 +56,11 @@ function TeacherCard({ t, pay, onDemoPaid, onSent }) {
   const [c, setC] = useState({ name: '', phone: '', email: '' });
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
-  const deposit = Math.min(pay.deposit, tier.price);
+  const finalPrice = off(tier.price, tier);
+  const couponOn = !!coupon && !tier.intro;
+  const deposit = Math.min(pay.deposit, finalPrice);
   const tierName = `${tier.label}${tier.note ? ` (${tier.note})` : ''}`;
+  const priceStr = couponOn ? `${ils(finalPrice)} (במקום ${ils(tier.price)} – קופון ${coupon.label} ${coupon.percent}%)` : ils(tier.price);
 
   const msg = [
     'היי, אשמח לתאם שיעורי נגינה ב-SOL Academy:',
@@ -63,7 +68,7 @@ function TeacherCard({ t, pay, onDemoPaid, onSent }) {
     `• כלי: ${t.instrument}`,
     `• מורה: ${t.teacher}`,
     `• חבילה: ${tierName}`,
-    `• מחיר: ${ils(tier.price)}${tier.lessons > 1 ? ` (${ils(perLesson)} לשיעור)` : ''}`,
+    `• מחיר: ${priceStr}${!couponOn && tier.lessons > 1 ? ` (${ils(perLesson)} לשיעור)` : ''}`,
     `• מועד מבוקש: ${when || 'גמיש – נתאם יחד'}`,
     '',
     'תודה!',
@@ -83,7 +88,7 @@ function TeacherCard({ t, pay, onDemoPaid, onSent }) {
       const r = await fetch('/api/academy-pay', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ teacher: t.teacher, instrument: t.instrument, tier: tierName, price: tier.price, date, time, ...c }),
+        body: JSON.stringify({ teacher: t.teacher, instrument: t.instrument, tier: tierName, price: tier.price, coupon: couponOn ? coupon.code : '', date, time, ...c }),
       });
       const j = await r.json().catch(() => ({}));
       if (r.ok && j.url) { window.location.href = j.url; return; }
@@ -99,7 +104,7 @@ function TeacherCard({ t, pay, onDemoPaid, onSent }) {
     if (pay.demo) { setTimeout(() => { setBusy(false); setForm(false); onSent(); }, 700); return; }
     const lines = [
       `כלי: ${t.instrument}`, `מורה: ${t.teacher}`,
-      `חבילה: ${tierName} – ${ils(tier.price)}`,
+      `חבילה: ${tierName} – ${priceStr}`,
       `מועד מבוקש: ${when || 'גמיש – נתאם יחד'}`,
       c.email.trim() && `מייל: ${c.email.trim()}`,
     ].filter(Boolean);
@@ -145,14 +150,17 @@ function TeacherCard({ t, pay, onDemoPaid, onSent }) {
                 {x.intro && <span className="ac-tier-sub">שיעור ראשון להיכרות – פעם אחת לכל תלמיד</span>}
                 {x.lessons > 1 && <span className="ac-tier-sub">{ils(per)} לשיעור · חיסכון של {ils(save)}</span>}
               </span>
-              <span className="ac-tier-price">{ils(x.price)}</span>
+              <span className="ac-tier-price">
+                {coupon && !x.intro ? <>{ils(off(x.price, x))}<s className="ac-was">{ils(x.price)}</s></> : ils(x.price)}
+              </span>
             </label>
           );
         })}
       </fieldset>
 
       <div className="ac-total" aria-live="polite">
-        <span className="ac-total-price">{ils(tier.price)}</span>
+        <span className="ac-total-price">{ils(finalPrice)}</span>
+        {couponOn && <span className="ac-coupon-tag">קופון {coupon.label} · {coupon.percent}% הנחה (במקום {ils(tier.price)})</span>}
         <span className="ac-total-sub">
           {tier.intro ? 'שיעור היכרות חד פעמי – פעם אחת לכל תלמיד' : tier.lessons > 1 ? `${tier.lessons} שיעורים · ${ils(perLesson)} לשיעור · חוסכים ${ils(saving)}` : 'שיעור אחד · 60 דקות'}
         </span>
@@ -179,7 +187,7 @@ function TeacherCard({ t, pay, onDemoPaid, onSent }) {
 
       {pay.on && !form && (
         <button type="button" className="ac-cta" onClick={() => { setErr(''); setForm('pay'); }}>
-          {deposit < tier.price ? `תשלום מקדמה (${ils(deposit)}) ושריון מקום` : `תשלום (${ils(deposit)}) ושריון מקום`}
+          {deposit < finalPrice ? `תשלום מקדמה (${ils(deposit)}) ושריון מקום` : `תשלום (${ils(deposit)}) ושריון מקום`}
         </button>
       )}
       {form && (
@@ -187,9 +195,9 @@ function TeacherCard({ t, pay, onDemoPaid, onSent }) {
           <input type="text" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hp" value={hp} onChange={(e) => setHp(e.target.value)} />
           <div className="ac-pay-head">
             {form === 'pay'
-              ? <strong>{deposit < tier.price ? `מקדמה ${ils(deposit)}` : `תשלום ${ils(deposit)}`}</strong>
+              ? <strong>{deposit < finalPrice ? `מקדמה ${ils(deposit)}` : `תשלום ${ils(deposit)}`}</strong>
               : <strong>שליחת בקשה ליניר</strong>}
-            <span>{tierName}{form === 'pay' && deposit < tier.price ? ` · יתרה ${ils(tier.price - deposit)} בתיאום` : ` · ${ils(tier.price)}`}</span>
+            <span>{tierName}{form === 'pay' && deposit < finalPrice ? ` · יתרה ${ils(finalPrice - deposit)} בתיאום` : ` · ${ils(finalPrice)}`}{couponOn ? ` · קופון ${coupon.label}` : ''}</span>
             <span>{when ? 'מועד: ' + when : form === 'pay' ? 'בחרו תאריך ושעה למעלה' : 'מועד: גמיש – נתאם יחד'}</span>
             <button type="button" className="ac-x" aria-label="סגירה" onClick={() => setForm(false)}><IconClose /></button>
           </div>
@@ -235,6 +243,12 @@ function TeacherCard({ t, pay, onDemoPaid, onSent }) {
 export default function Academy() {
   const [pay, setPay] = useState({ on: false, deposit: 0, demo: false, calendar: false, notify: false });
   const [result, setResult] = useState('');
+  // קופון לכל הדף (למשל Mayan = 10% על החבילה שבוחרים)
+  const [couponCode, setCouponCode] = useState('');
+  const [couponInput, setCouponInput] = useState('');
+  const [couponMsg, setCouponMsg] = useState('');
+  const coupon = couponCode ? findCoupon(couponCode) : null;
+  const applyCoupon = () => { const c = findCoupon(couponInput); if (c) { setCouponCode(c.code); setCouponMsg(''); } else setCouponMsg(couponInput.trim() ? 'הקוד לא תקין' : 'הקלידו קוד קופון'); };
 
   useEffect(() => {
     const q = new URLSearchParams(window.location.search);
@@ -285,8 +299,28 @@ export default function Academy() {
             </div>
           )}
 
+          <div className="ac-coupon">
+            {coupon ? (
+              <div className="ac-coupon-on" role="status">
+                <span>✓ קופון <b dir="ltr">{coupon.label}</b> הופעל – {coupon.percent}% הנחה על החבילה שתבחרו (לא כולל שיעור היכרות)</span>
+                <button type="button" className="ac-x" aria-label="הסרת הקופון" onClick={() => { setCouponCode(''); setCouponInput(''); }}><IconClose /></button>
+              </div>
+            ) : (
+              <>
+                <label className="ac-lbl" htmlFor="ac-coupon">יש לך קוד קופון?</label>
+                <div className="ac-coupon-row">
+                  <input id="ac-coupon" className="ac-field" dir="ltr" autoComplete="off" placeholder="קוד" value={couponInput}
+                    onChange={(e) => { setCouponInput(e.target.value); setCouponMsg(''); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); applyCoupon(); } }} />
+                  <button type="button" className="ac-coupon-btn" onClick={applyCoupon}>הפעלה</button>
+                </div>
+                {couponMsg && <p role="alert" className="ac-err">{couponMsg}</p>}
+              </>
+            )}
+          </div>
+
           <div className="ac-grid swipe">
-            {academyData.map((t) => <TeacherCard key={t.id} t={t} pay={pay} onDemoPaid={demoPaid} onSent={requestSent} />)}
+            {academyData.map((t) => <TeacherCard key={t.id} t={t} pay={pay} onDemoPaid={demoPaid} onSent={requestSent} coupon={coupon} />)}
           </div>
         </section>
       </main>

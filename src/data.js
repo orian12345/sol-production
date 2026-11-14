@@ -7,6 +7,21 @@ export const WA = '972549030134';
 export const CANCEL_POLICY = {
   short: 'ביטול פחות מ-24 שעות לפני המועד – דמי ביטול של 10% מסכום ההזמנה או 50 ₪, הגבוה מביניהם.',
 };
+/* קודי קופון — מוסיפים כאן שורה לכל קופון (האותיות לא משנות: Mayan = MAYAN = mayan).
+   percent = אחוז הנחה על החבילות שנבחרו. (חשוב: אותה רשימה קיימת גם בשרת, worker/index.js → COUPONS) */
+export const COUPONS = {
+  MAYAN: { percent: 10, label: 'Mayan' },
+};
+export const findCoupon = (code) => {
+  const k = String(code || '').trim().toUpperCase();
+  return COUPONS[k] ? { code: k, ...COUPONS[k] } : null;
+};
+// מחיר אחרי הנחה מתוך מחרוזת מחיר ('₪650', '₪2,150 – ₪3,500'). מחיר "לפי הצעה" נשאר כמו שהוא.
+export const discountText = (price, percent) => {
+  if (!percent || !/\d/.test(price)) return price;
+  return String(price).replace(/₪([\d,]+)/g, (_, n) => '₪' + Math.round(Number(n.replace(/,/g, '')) * (100 - percent) / 100).toLocaleString('en-US'));
+};
+
 export const PHONE = '054-903-0134';
 export const TEL = 'tel:+972549030134';
 export const ADDRESS = 'הראשונים 41, אור יהודה';

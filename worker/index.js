@@ -20,6 +20,13 @@ const MORNING = {
   sandbox: { token: 'https://api.sandbox.morning.dev/idp/v1/oauth/token', api: 'https://sandbox.d.greeninvoice.co.il/api/v1' },
 };
 
+// קודי קופון (אותה רשימה כמו ב-src/data.js → COUPONS)
+const COUPONS = { MAYAN: 10 };
+const couponOf = (code) => {
+  const k = String(code || '').trim().toUpperCase();
+  return COUPONS[k] ? { code: k, percent: COUPONS[k] } : null;
+};
+
 const json = (data, status = 200) =>
   new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' } });
 
@@ -268,7 +275,10 @@ async function academyPay(request, url, env) {
   const phone = clip(b.phone, 20).replace(/[^\d+\-\s]/g, '');
   if (!name || phone.replace(/\D/g, '').length < 9) return json({ error: 'missing_contact' }, 400);
   const teacher = clip(b.teacher, 60), instrument = clip(b.instrument, 60), tier = clip(b.tier, 80);
-  const tierPrice = Math.max(0, Number(b.price) || 0);
+  // מחיר החבילה — אחרי הנחת קופון אם הוזן קוד תקין (המחיר המקורי נשלח מהדף, ההנחה מחושבת כאן)
+  const listPrice = Math.max(0, Number(b.price) || 0);
+  const cpn = couponOf(b.coupon);
+  const tierPrice = cpn ? Math.round(listPrice * (100 - cpn.percent) / 100) : listPrice;
   if (!teacher || !tier || !tierPrice) return json({ error: 'bad_request' }, 400);
   // מועד מבוקש: שיעורים מ-14:00 עד 22:00 (התחלה), לא בעבר
   const date = clip(b.date, 10), time = clip(b.time, 5);
@@ -282,7 +292,7 @@ async function academyPay(request, url, env) {
   const when = `${dd}/${mm}/${yy} ${time}`;
   const amount = Math.min(cfg.deposit, tierPrice);
   const id = crypto.randomUUID(), secret = crypto.randomUUID().replace(/-/g, '');
-  const rec = { id, secret, status: 'pending', created: Date.now(), name, phone, email, teacher, instrument, tier, tierPrice, amount, date, time, start, end };
+  const rec = { id, secret, status: 'pending', created: Date.now(), name, phone, email, teacher, instrument, tier, tierPrice, listPrice, coupon: cpn ? cpn.code : '', amount, date, time, start, end };
   await env.BOOKINGS.put('academy:' + id, JSON.stringify(rec), { expirationTtl: 60 * 60 * 24 * 90 });
   // נועלים את השעה ביומן בזמן שהלקוח משלם (אותו מנגנון כמו הזמנות האולפן)
   await env.BOOKINGS.put('hold:' + date + ':' + id, JSON.stringify({ start, end }), { expirationTtl: HOLD_MINUTES * 60 });
@@ -292,7 +302,7 @@ async function academyPay(request, url, env) {
     description: `מקדמה – SOL Academy: ${instrument} עם ${teacher} (${tier}) – ${when}`,
     type: Number(env.MORNING_DOC_TYPE || 400), amount, currency: 'ILS', vatType: 0, lang: 'he', maxPayments: 1,
     client: { name, phone, mobile: phone, emails: email ? [email] : undefined, add: true },
-    remarks: `${tier} · מועד מבוקש ${when} (בכפוף לאישור המורה) · מחיר החבילה ₪${tierPrice}` + (balance > 0 ? ` · יתרה לתשלום ₪${balance}` : ''),
+    remarks: `${tier} · מועד מבוקש ${when} (בכפוף לאישור המורה) · מחיר החבילה ₪${tierPrice}` + (cpn ? ` (אחרי קופון ${cpn.code} ${cpn.percent}%, במקום ₪${listPrice})` : '') + (balance > 0 ? ` · יתרה לתשלום ₪${balance}` : ''),
     successUrl: `${site}/academy?paid=1`,
     failureUrl: `${site}/academy?payfail=1`,
     notifyUrl: `${url.origin}/api/academy-notify?id=${id}&k=${secret}`,
@@ -346,7 +356,7 @@ async function academyNotify(request, url, env) {
     ' ',
     `מועד: ${ilDate(rec.start)}`,
     `מורה: ${rec.teacher}`,
-    `חבילה: ${rec.tier} (₪${rec.tierPrice})`,
+    `חבילה: ${rec.tier} (₪${rec.tierPrice})` + (rec.coupon ? ` · קופון ${rec.coupon}` : ''),
     `שולם: ₪${rec.amount}` + (rec.tierPrice > rec.amount ? ` · יתרה ₪${rec.tierPrice - rec.amount}` : ''),
     `תלמיד/ה: ${rec.name}`, `טלפון: ${rec.phone}`, rec.email && `מייל: ${rec.email}`,
     clash && '⚠ יש חפיפה עם אירוע אחר ביומן',
@@ -375,6 +385,7 @@ async function saveAgreement(request, env) {
     svcLabel: clip(q.svcLabel, 300), date: clip(q.date, 10), time: clip(q.time, 5), dur: clip(q.dur, 3), durLabel: clip(q.durLabel, 20),
     band: clip(q.band, 40), rec: !!q.rec, isReh: !!q.isReh, name: clip(q.name, 100), phone: clip(q.phone, 30), email: clip(q.email, 120), notes: clip(q.notes, 500),
     selected: (Array.isArray(q.selected) ? q.selected : q.selected ? [q.selected] : []).slice(0, 20).map((x) => ({ id: clip(x && x.id, 40), name: clip(x && x.name, 120), price: clip(x && x.price, 60) })),
+    coupon: couponOf(q.coupon) ? couponOf(q.coupon).code : '', // רק קוד תקין נשמר — אי אפשר לזייף הנחה
   };
   const terms = b.terms.slice(0, 20).map((s) => ({ title: clip(s.title, 120), items: (Array.isArray(s.items) ? s.items : []).slice(0, 20).map((t) => clip(t, 1000)) }));
   const id = crypto.randomUUID();
