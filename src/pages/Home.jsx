@@ -139,7 +139,7 @@ export default function Home() {
               </article>
 
               <article className="glass lift media">
-                <a className="media-thumb" href={yt('ליאן שמחון קמה מהפחד')} target="_blank" rel="noopener" aria-label="צפייה ביוטיוב: קמה מהפחד – ליאן שמחון">
+                <a className="media-thumb has-img" style={{ backgroundImage: 'url(https://i.ytimg.com/vi/yhvVbSiDxVs/hqdefault.jpg)' }} href="https://youtu.be/yhvVbSiDxVs" target="_blank" rel="noopener" aria-label="צפייה ביוטיוב: קמה מהפחד – ליאן שמחון">
                   <span className="media-tag yt">YouTube</span>
                   <span className="rel-play" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><polygon points="7 4 20 12 7 20 7 4" /></svg></span>
                 </a>
@@ -147,7 +147,7 @@ export default function Home() {
                   <h3 className="d">קמה מהפחד</h3>
                   <span className="media-sub">ליאן שמחון · קאבר בהפקת SOL Production</span>
                   <div className="media-actions">
-                    <a className="btn btn-main btn-sm" href={yt('ליאן שמחון קמה מהפחד')} target="_blank" rel="noopener">צפייה ביוטיוב</a>
+                    <a className="btn btn-main btn-sm" href="https://youtu.be/yhvVbSiDxVs" target="_blank" rel="noopener">צפייה ביוטיוב</a>
                   </div>
                 </div>
               </article>
