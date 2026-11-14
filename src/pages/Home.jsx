@@ -89,6 +89,19 @@ export default function Home() {
           </a>
         </section>
 
+        <section className="wrap about-top" aria-label="אודות יניר סול">
+          <article id="about" className="glass card lift about-card" style={{ scrollMarginTop: 110 }}>
+            <div className="about-flex">
+              <img className="about-photo" src="/yanir.webp" alt="יניר סול באולפן SOL Production באור יהודה" width="480" height="600" loading="lazy" />
+              <div className="about-txt">
+                <span className="chip">אודות</span>
+                <h3 className="d">יניר סול</h3>
+                <p>זמר, כותב, מלחין ומפיק מוזיקלי. ב<span style={{ whiteSpace: 'nowrap' }}>־SOL Production</span> באור יהודה הוא מלווה אמנים, להקות ומשפחות מהרעיון הראשון ועד המאסטר.</p>
+              </div>
+            </div>
+          </article>
+        </section>
+
         <section id="home" className="wrap hero" aria-labelledby="hero-title">
           <div className="hero-txt">
             <h1 id="hero-title" className="d">יניר סול <span style={{ color: 'var(--violet-l)' }}>|</span> SOL Production — <span className="grad">אולפן הקלטות באור יהודה</span></h1>
@@ -109,17 +122,7 @@ export default function Home() {
               <span className="chip">המוזיקה של יניר · קאברים וסינגלים</span>
               <h2 id="music-title" className="d h2">אמן על הבמה, מפיק מאחורי הקונסולה</h2>
             </div>
-            <div className="music-grid swipe">
-              <article id="about" className="glass card lift about-card" style={{ scrollMarginTop: 110 }}>
-                <div className="about-flex">
-                  <img className="about-photo" src="/yanir.webp" alt="יניר סול באולפן SOL Production באור יהודה" width="480" height="600" loading="lazy" />
-                  <div className="about-txt">
-                    <span className="chip">אודות</span>
-                    <h3 className="d">יניר סול</h3>
-                    <p>זמר, כותב, מלחין ומפיק מוזיקלי. ב<span style={{ whiteSpace: 'nowrap' }}>־SOL Production</span> באור יהודה הוא מלווה אמנים, להקות ומשפחות מהרעיון הראשון ועד המאסטר.</p>
-                  </div>
-                </div>
-              </article>
+            <div className="music-grid songs-only swipe">
 
               <article className="glass lift media">
                 <a className="media-thumb has-img" style={{ backgroundImage: 'url(https://i.ytimg.com/vi/UlG1Isu8YTw/hqdefault.jpg)' }} href="https://youtu.be/UlG1Isu8YTw" target="_blank" rel="noopener" aria-label="צפייה ביוטיוב: סביב – יניר סול">

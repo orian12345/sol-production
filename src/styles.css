@@ -649,3 +649,18 @@ footer{background:#090c1e;border-top-color:var(--line-soft)}
 .media-thumb.has-img::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(12,16,36,.25),rgba(12,16,36,.65))}
 .media-thumb.has-img > *{position:relative}
 .media-thumb.has-img .media-tag{position:absolute}
+
+/* About moved above the headline (client request) */
+.about-top{padding-top:22px}
+.about-top .about-card{max-width:none}
+.about-top .about-photo{width:170px}
+.about-top .about-card p{font-size:18px}
+.music-grid.songs-only{grid-template-columns:repeat(2,minmax(0,1fr))}
+.hero{padding-top:44px}
+@media (max-width:700px){
+  .about-top{padding-top:14px}
+  .about-top .about-photo{width:100%;aspect-ratio:16/10}
+  .about-top .about-card p{font-size:16px}
+  .hero{padding-top:24px}
+  .music-grid.songs-only.swipe > *{flex-basis:84%}
+}
