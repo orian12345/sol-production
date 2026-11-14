@@ -55,7 +55,7 @@ export const PRICING = [
     { id: 'master', name: 'מאסטרינג בלבד', desc: 'לשיר מוכן', price: '₪1,250', service: 'mix' },
   ] },
   { id: 'clips', label: 'קליפים', items: [
-    { id: 'clip-pro', name: 'צילום קליפ מקצועי + צלם', desc: 'לשיר אחד', price: '₪1,250', service: 'clip' },
+    { id: 'clip-pro', name: 'צילום קליפ מקצועי + צלם', desc: 'לשיר אחד', price: '₪1,500', service: 'clip' },
     { id: 'clip-lyrics', name: 'הפקת קליפ מילים', desc: 'לסינגל או קאבר', price: '₪2,450', service: 'clip' },
     { id: 'reels', name: 'הקלטה וצילום רילס + צלם', desc: 'לטיקטוק / אינסטגרם', price: '₪650', service: 'clip' },
   ] },
