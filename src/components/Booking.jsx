@@ -40,11 +40,14 @@ export function Booking({ st, setSt }) {
   const priceLine = (x) => (coupon && priceOf(x) !== x.price ? `${priceOf(x)} במקום ${x.price}` : x.price);
   const couponLine = coupon ? `קופון ${coupon.label} – ${coupon.percent}% הנחה על החבילות שנבחרו` : '';
   const isReh = services.includes('rehearsal');
-  const showHours = paid || isReh || services.includes('write');
+  const showHours = paid || isReh || services.includes('write'); // שעת התחלה
+  const showDur = isReh; // משך הסשן — רק בחדר חזרות. בשאר השירותים יניר מתאים את משך הסשן
+  const DUR_OTHER = 'יניר יתאים את משך הסשן';
   // לחיצה על שירות מוסיפה/מורידה אותו
   const toggleSvc = (id) => set({ services: services.includes(id) ? services.filter((x) => x !== id) : [...services, id] });
   const removeSel = (id) => set({ selected: selected.filter((x) => x.id !== id) });
-  const dur = parseInt(st.dur, 10) || 2;
+  // בחדר חזרות — לפי מה שהלקוח בחר. בשאר — שעתיים כברירת מחדל לשריון ביומן (יניר יתאים)
+  const dur = isReh ? (parseInt(st.dur, 10) || 2) : 2;
 
   // מצב הדגמה (?demo=1): מראה את תהליך השריון בלי תשלום אמיתי ובלי לגעת ביומן
   const [demo, setDemo] = useState(false);
@@ -103,7 +106,7 @@ export function Booking({ st, setSt }) {
   if (st.date) { const p = st.date.split('-'); dateLabel = `${p[2]}/${p[1]}/${p[0]}`; }
   const name = st.name.trim(), notes = st.notes.trim();
   const svcLabel = SERVICES.filter(([id]) => services.includes(id)).map(([, l]) => l).join(' + ') || 'עוד לא נבחר';
-  const durLabel = DURS.find((x) => x[0] === st.dur)[1];
+  const durLabel = showDur ? DURS.find((x) => x[0] === st.dur)[1] : DUR_OTHER;
 
   const lines = ['היי יניר, אשמח לשריין סשן ב־SOL Production:', '', (services.length > 1 ? '• שירותים: ' : '• שירות: ') + svcLabel];
   if (selected.length) { lines.push('• מהמחירון:'); selected.forEach((x) => lines.push(`   – ${x.name} (${priceLine(x)})`)); }
@@ -205,7 +208,7 @@ export function Booking({ st, setSt }) {
         <p className="lead">
           {paid
             ? 'בוחרים שירות, תאריך ושעה פנויה — משלמים מקדמה, והתאריך משוריין.'
-            : 'בוחרים שירות, תאריך ומשך — ההודעה נכתבת לבד ונשלחת ישר ליניר בוואטסאפ.'}
+            : 'בוחרים שירות מהמחירון, תאריך ופרטים — והבקשה מגיעה ישר ליניר.'}
         </p>
       </div>
 
@@ -237,184 +240,200 @@ export function Booking({ st, setSt }) {
         </div>
       )}
 
-      <div className="bk">
-        <form className="glass" noValidate onSubmit={(e) => { e.preventDefault(); if (paid) pay(); }}>
-          <fieldset>
-            <legend className="lbl">1 · מה תרצו? (אפשר לבחור כמה)</legend>
-            <div className="opts scroll-x">
-              {SERVICES.map(([id, label]) => pill(services.includes(id), () => toggleSvc(id), label, id))}
-            </div>
-          </fieldset>
-
-          {isReh && (
-            <div className="subbox">
-              <div style={{ display: 'flex', gap: 16, alignItems: 'center', justifyContent: 'space-between' }}>
-                <div>
-                  <div id="rec-lbl" style={{ font: '700 16px Heebo' }}>הוספת הקלטת ערוצים מלאה</div>
-                  <div style={{ fontSize: 14, color: 'var(--muted)', marginTop: 4 }}>Multi-Track Live Recording באיכות אולפן</div>
-                </div>
-                <button type="button" className="sw" role="switch" aria-checked={st.rec} aria-labelledby="rec-lbl" onClick={() => set({ rec: !st.rec })}><span /></button>
+      {selected.length === 0 ? (
+        <div className="glass bk-lock">
+          <div className="bk-lock-ico" aria-hidden="true">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></svg>
+          </div>
+          <h3 className="d">קודם בוחרים שירות מהמחירון</h3>
+          <p>לוחצים <b>"הוספה להזמנה"</b> על השירות או החבילה שמתאימים לכם במחירון — וטופס ההזמנה נפתח כאן עם כל הפרטים. אפשר לבחור גם כמה שירותים יחד.</p>
+          <a className="btn btn-main" href="#pricing">למחירון</a>
+        </div>
+      ) : (
+        <div className="bk">
+          <form className="glass" noValidate onSubmit={(e) => { e.preventDefault(); if (paid) pay(); }}>
+            <fieldset>
+              <legend className="lbl">1 · מה תרצו? (אפשר לבחור כמה)</legend>
+              <div className="opts scroll-x">
+                {SERVICES.map(([id, label]) => pill(services.includes(id), () => toggleSvc(id), label, id))}
               </div>
-              <fieldset>
-                <legend className="lbl">גודל ההרכב</legend>
-                <div className="opts">{BANDS.map((b) => pill(st.band === b, () => set({ band: b }), b))}</div>
-              </fieldset>
-            </div>
-          )}
+            </fieldset>
 
-          <div className="two">
-            <div>
-              <label className="lbl" htmlFor="bk-date">2 · תאריך</label>
-              <input id="bk-date" className="field" type="date" value={st.date} onChange={(e) => set({ date: e.target.value })} />
+            {isReh && (
+              <div className="subbox">
+                <div style={{ display: 'flex', gap: 16, alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div>
+                    <div id="rec-lbl" style={{ font: '700 16px Heebo' }}>הוספת הקלטת ערוצים מלאה</div>
+                    <div style={{ fontSize: 14, color: 'var(--muted)', marginTop: 4 }}>Multi-Track Live Recording באיכות אולפן</div>
+                  </div>
+                  <button type="button" className="sw" role="switch" aria-checked={st.rec} aria-labelledby="rec-lbl" onClick={() => set({ rec: !st.rec })}><span /></button>
+                </div>
+                <fieldset>
+                  <legend className="lbl">גודל ההרכב</legend>
+                  <div className="opts">{BANDS.map((b) => pill(st.band === b, () => set({ band: b }), b))}</div>
+                </fieldset>
+              </div>
+            )}
+
+            <div className="two">
+              <div>
+                <label className="lbl" htmlFor="bk-date">2 · תאריך</label>
+                <input id="bk-date" className="field" type="date" value={st.date} onChange={(e) => set({ date: e.target.value })} />
+              </div>
+              {showDur ? (
+                <fieldset>
+                  <legend className="lbl">משך הסשן (חדר חזרות)</legend>
+                  <div className="opts">{DURS.map(([id, label]) => pill(st.dur === id, () => set({ dur: id }), label, id))}</div>
+                </fieldset>
+              ) : (
+                <div>
+                  <span className="lbl">משך הסשן</span>
+                  <p className="note dur-note">יניר יתאים את משך הסשן לשירות שבחרתם.</p>
+                </div>
+              )}
             </div>
+
             {showHours && (
               <fieldset>
-                <legend className="lbl">משך הסשן</legend>
-                <div className="opts">{DURS.map(([id, label]) => pill(st.dur === id, () => set({ dur: id }), label, id))}</div>
+                <legend className="lbl">3 · שעת התחלה{paid ? ' (רק שעות פנויות)' : ''}</legend>
+                {paid && !st.date && <p className="note" style={{ margin: 0 }}>בחרו קודם תאריך כדי לראות שעות פנויות.</p>}
+                {paid && st.date && loadingSlots && <p className="note" style={{ margin: 0 }}>בודקים ביומן…</p>}
+                {paid && st.date && !loadingSlots && slots && !slots.some((s) => s.free) && (
+                  <p className="note" style={{ margin: 0 }}>{showDur ? 'אין שעות פנויות ביום הזה במשך שנבחר. נסו יום אחר או משך קצר יותר.' : 'אין שעות פנויות ביום הזה. נסו יום אחר.'}</p>
+                )}
+                {(!paid || (st.date && !loadingSlots && slots)) && (
+                  <div className="opts scroll-x" dir="ltr" style={{ justifyContent: 'flex-end' }}>
+                    {allTimes.map((t) => {
+                      const free = !paid || freeOf(t);
+                      return pill(time === t, () => set({ time: t }), free ? t : t + ' · תפוס', t, !free);
+                    })}
+                  </div>
+                )}
               </fieldset>
             )}
-          </div>
 
-          {showHours && (
-            <fieldset>
-              <legend className="lbl">3 · שעת התחלה{paid ? ' (רק שעות פנויות)' : ''}</legend>
-              {paid && !st.date && <p className="note" style={{ margin: 0 }}>בחרו קודם תאריך כדי לראות שעות פנויות.</p>}
-              {paid && st.date && loadingSlots && <p className="note" style={{ margin: 0 }}>בודקים ביומן…</p>}
-              {paid && st.date && !loadingSlots && slots && !slots.some((s) => s.free) && (
-                <p className="note" style={{ margin: 0 }}>אין שעות פנויות ביום הזה במשך שנבחר. נסו יום אחר או משך קצר יותר.</p>
-              )}
-              {(!paid || (st.date && !loadingSlots && slots)) && (
-                <div className="opts scroll-x" dir="ltr" style={{ justifyContent: 'flex-end' }}>
-                  {allTimes.map((t) => {
-                    const free = !paid || freeOf(t);
-                    return pill(time === t, () => set({ time: t }), free ? t : t + ' · תפוס', t, !free);
-                  })}
-                </div>
-              )}
-            </fieldset>
-          )}
-
-          <div className="two">
-            <div>
-              <label className="lbl" htmlFor="bk-name">4 · שם מלא</label>
-              <input id="bk-name" className="field" type="text" autoComplete="name" placeholder="איך קוראים לך?" value={st.name} onChange={(e) => set({ name: e.target.value })} />
-            </div>
-            <div>
-              <label className="lbl" htmlFor="bk-phone">טלפון{paid || cfg.notify ? '' : ' (לא חובה)'}</label>
-              <input id="bk-phone" className="field" type="tel" dir="ltr" autoComplete="tel" placeholder="050-0000000" value={st.phone} onChange={(e) => set({ phone: e.target.value })} />
-            </div>
-            {paid && (
+            <div className="two">
               <div>
-                <label className="lbl" htmlFor="bk-email">מייל לקבלה (לא חובה)</label>
-                <input id="bk-email" className="field" type="email" dir="ltr" autoComplete="email" placeholder="name@example.com" value={st.email} onChange={(e) => set({ email: e.target.value })} />
+                <label className="lbl" htmlFor="bk-name">4 · שם מלא</label>
+                <input id="bk-name" className="field" type="text" autoComplete="name" placeholder="איך קוראים לך?" value={st.name} onChange={(e) => set({ name: e.target.value })} />
               </div>
-            )}
-            <div>
-              <label className="lbl" htmlFor="bk-notes">הערות (לא חובה)</label>
-              <input id="bk-notes" className="field" type="text" placeholder="שם חתן/כלת השמחה, שם הלהקה, ז'אנר…" value={st.notes} onChange={(e) => set({ notes: e.target.value })} />
-            </div>
-          </div>
-
-          <div className="coupon">
-            <label className="lbl" htmlFor="bk-coupon">קוד קופון (לא חובה)</label>
-            {coupon ? (
-              <div className="coupon-on" role="status">
-                <span>✓ קופון <b dir="ltr">{coupon.label}</b> הופעל – {coupon.percent}% הנחה על החבילות שנבחרו</span>
-                <button type="button" className="icon-btn" aria-label="הסרת הקופון" onClick={() => { set({ coupon: '' }); setCouponInput(''); }}><IconClose /></button>
+              <div>
+                <label className="lbl" htmlFor="bk-phone">טלפון{paid || cfg.notify ? '' : ' (לא חובה)'}</label>
+                <input id="bk-phone" className="field" type="tel" dir="ltr" autoComplete="tel" placeholder="050-0000000" value={st.phone} onChange={(e) => set({ phone: e.target.value })} />
               </div>
-            ) : (
-              <div className="coupon-row">
-                <input id="bk-coupon" className="field" type="text" dir="ltr" autoComplete="off" placeholder="קוד" value={couponInput}
-                  onChange={(e) => { setCouponInput(e.target.value); setCouponMsg(''); }}
-                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); applyCoupon(); } }} />
-                <button type="button" className="pill" onClick={applyCoupon}>הפעלה</button>
-              </div>
-            )}
-            {couponMsg && <p role="alert" className="coupon-err">{couponMsg}</p>}
-          </div>
-        </form>
-
-        <aside className="glass" aria-labelledby="pv-title">
-          {selected.length > 0 && (
-            <div className="sel-list">
-              <span className="lbl" style={{ margin: 0 }}>מהמחירון ({selected.length})</span>
-              {selected.map((x) => (
-                <div key={x.id} className="selbox">
-                  <span style={{ fontSize: 14 }}>
-                    {x.name + ' · '}
-                    {coupon && priceOf(x) !== x.price
-                      ? <><b className="coupon-price">{priceOf(x)}</b> <s className="old" style={{ fontSize: 13 }}>{x.price}</s></>
-                      : x.price}
-                  </span>
-                  <button type="button" className="icon-btn" aria-label={'הסרת ' + x.name} onClick={() => removeSel(x.id)}><IconClose /></button>
+              {paid && (
+                <div>
+                  <label className="lbl" htmlFor="bk-email">מייל לקבלה (לא חובה)</label>
+                  <input id="bk-email" className="field" type="email" dir="ltr" autoComplete="email" placeholder="name@example.com" value={st.email} onChange={(e) => set({ email: e.target.value })} />
                 </div>
-              ))}
-            </div>
-          )}
-
-          {paid ? (
-            <>
-              <h3 id="pv-title" className="d" style={{ margin: 0, fontSize: 22 }}>סיכום ושריון</h3>
-              <ul className="ticks" style={{ fontSize: 15 }}>
-                {services.length ? SERVICES.filter(([id]) => services.includes(id)).map(([id, l]) => <li key={id}>{l}</li>) : <li>שירות — עוד לא נבחר</li>}
-                <li>{st.date ? `${dateLabel}${time ? ' · ' + time : ''} · ${durLabel}` : 'תאריך — עוד לא נבחר'}</li>
-                <li>{name || 'שם — עוד לא הוזן'}</li>
-              </ul>
-              <div className="prow"><span className="price">₪{cfg.deposit.toLocaleString('en-US')}</span><span className="unit">מקדמה לשריון התאריך</span></div>
-              <button type="button" className="btn btn-main" style={{ width: '100%' }} onClick={pay} disabled={paying} aria-busy={paying}>
-                {paying ? 'פותחים את דף התשלום…' : 'לתשלום מקדמה ושריון התאריך'}
-              </button>
-              {err && <p role="alert" style={{ margin: 0, fontSize: 14, color: '#fca5a5', textAlign: 'center' }}>{err}</p>}
-              <p className="note" style={{ margin: 0, textAlign: 'center' }}>
-                התאריך משוריין רק אחרי שהתשלום עובר. התשלום מאובטח דרך Morning, והקבלה נשלחת אליך אוטומטית.
-              </p>
-              <p className="note policy-note">{CANCEL_POLICY.short} <a href="/cancellation">מדיניות ביטולים</a></p>
-              <a className="btn btn-glass btn-sm" href={waLink(msg)} target="_blank" rel="noopener" style={{ width: '100%' }}><IconWA size={18} />שאלה ליניר בוואטסאפ</a>
-            </>
-          ) : (
-            <>
-              <h3 id="pv-title" className="d" style={{ margin: 0, fontSize: 22 }}>סיכום ההזמנה</h3>
-              <ul className="ticks" style={{ fontSize: 15 }} aria-live="polite">
-                {services.length ? SERVICES.filter(([id]) => services.includes(id)).map(([id, l]) => <li key={id}>{l}</li>) : <li>שירות — עוד לא נבחר</li>}
-                <li>{dateLabel}{showHours ? ` · ${time} · ${durLabel}` : ''}</li>
-                {isReh && <li>{st.band} · הקלטת ערוצים: {st.rec ? 'כן' : 'לא'}</li>}
-                <li>{name || 'שם — עוד לא הוזן'}</li>
-              </ul>
-              {autoSend ? (
-                <>
-                  <input type="text" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hp" value={hp} onChange={(e) => setHp(e.target.value)} />
-                  <button type="button" className="btn btn-wa" style={{ width: '100%' }} onClick={sendRequest} disabled={sending} aria-busy={sending}>
-                    <IconWA />{sending ? 'שולחים…' : 'שליחת בקשה ליניר'}
-                  </button>
-                  {sendErr && (
-                    <p role="alert" style={{ margin: 0, fontSize: 14, color: '#fca5a5', textAlign: 'center' }}>
-                      {sendErr}{' '}{sendErr.endsWith(':') && <a href={waLink(msg)} target="_blank" rel="noopener">שליחה בוואטסאפ</a>}
-                    </p>
-                  )}
-                  <p style={{ margin: 0, fontSize: 14, color: 'var(--muted)', textAlign: 'center' }}>
-                    הבקשה נשלחת ישירות ליניר בוואטסאפ — הוא יחזור אליכם בהקדם.
-                  </p>
-                </>
-              ) : (
-                <>
-                  <a className="btn btn-wa" href={waLink(msg)} target="_blank" rel="noopener" style={{ width: '100%' }}>
-                    <IconWA />שליחת ההזמנה ליניר
-                  </a>
-                  <p style={{ margin: 0, fontSize: 14, color: 'var(--muted)', textAlign: 'center' }}>
-                    {name ? 'הכול מוכן — לחיצה אחת ונפתח וואטסאפ עם כל הפרטים.' : 'טיפ: הוסיפו שם כדי שיניר ידע למי לחזור.'}
-                  </p>
-                </>
               )}
-              <p className="note policy-note">{CANCEL_POLICY.short} <a href="/cancellation">מדיניות ביטולים</a></p>
-            </>
-          )}
-          {showQuote && (
-            <button type="button" className="btn btn-glass btn-sm" style={{ width: '100%' }} onClick={openQuote}>
-              הצעת מחיר ואישור תנאים (PDF)
-            </button>
-          )}
-        </aside>
-      </div>
+              <div>
+                <label className="lbl" htmlFor="bk-notes">הערות (לא חובה)</label>
+                <input id="bk-notes" className="field" type="text" placeholder="שם חתן/כלת השמחה, שם הלהקה, ז'אנר…" value={st.notes} onChange={(e) => set({ notes: e.target.value })} />
+              </div>
+            </div>
+
+            <div className="coupon">
+              <label className="lbl" htmlFor="bk-coupon">קוד קופון (לא חובה)</label>
+              {coupon ? (
+                <div className="coupon-on" role="status">
+                  <span>✓ קופון <b dir="ltr">{coupon.label}</b> הופעל – {coupon.percent}% הנחה על החבילות שנבחרו</span>
+                  <button type="button" className="icon-btn" aria-label="הסרת הקופון" onClick={() => { set({ coupon: '' }); setCouponInput(''); }}><IconClose /></button>
+                </div>
+              ) : (
+                <div className="coupon-row">
+                  <input id="bk-coupon" className="field" type="text" dir="ltr" autoComplete="off" placeholder="קוד" value={couponInput}
+                    onChange={(e) => { setCouponInput(e.target.value); setCouponMsg(''); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); applyCoupon(); } }} />
+                  <button type="button" className="pill" onClick={applyCoupon}>הפעלה</button>
+                </div>
+              )}
+              {couponMsg && <p role="alert" className="coupon-err">{couponMsg}</p>}
+            </div>
+          </form>
+
+          <aside className="glass" aria-labelledby="pv-title">
+            {selected.length > 0 && (
+              <div className="sel-list">
+                <span className="lbl" style={{ margin: 0 }}>מהמחירון ({selected.length})</span>
+                {selected.map((x) => (
+                  <div key={x.id} className="selbox">
+                    <span style={{ fontSize: 14 }}>
+                      {x.name + ' · '}
+                      {coupon && priceOf(x) !== x.price
+                        ? <><b className="coupon-price">{priceOf(x)}</b> <s className="old" style={{ fontSize: 13 }}>{x.price}</s></>
+                        : x.price}
+                    </span>
+                    <button type="button" className="icon-btn" aria-label={'הסרת ' + x.name} onClick={() => removeSel(x.id)}><IconClose /></button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {paid ? (
+              <>
+                <h3 id="pv-title" className="d" style={{ margin: 0, fontSize: 22 }}>סיכום ושריון</h3>
+                <ul className="ticks" style={{ fontSize: 15 }}>
+                  {services.length ? SERVICES.filter(([id]) => services.includes(id)).map(([id, l]) => <li key={id}>{l}</li>) : <li>שירות — עוד לא נבחר</li>}
+                  <li>{st.date ? `${dateLabel}${time ? ' · ' + time : ''} · ${durLabel}` : 'תאריך — עוד לא נבחר'}</li>
+                  <li>{name || 'שם — עוד לא הוזן'}</li>
+                </ul>
+                <div className="prow"><span className="price">₪{cfg.deposit.toLocaleString('en-US')}</span><span className="unit">מקדמה לשריון התאריך</span></div>
+                <button type="button" className="btn btn-main" style={{ width: '100%' }} onClick={pay} disabled={paying} aria-busy={paying}>
+                  {paying ? 'פותחים את דף התשלום…' : 'לתשלום מקדמה ושריון התאריך'}
+                </button>
+                {err && <p role="alert" style={{ margin: 0, fontSize: 14, color: '#fca5a5', textAlign: 'center' }}>{err}</p>}
+                <p className="note" style={{ margin: 0, textAlign: 'center' }}>
+                  התאריך משוריין רק אחרי שהתשלום עובר. התשלום מאובטח דרך Morning, והקבלה נשלחת אליך אוטומטית.
+                </p>
+                <p className="note policy-note">{CANCEL_POLICY.short} <a href="/cancellation">מדיניות ביטולים</a></p>
+                <a className="btn btn-glass btn-sm" href={waLink(msg)} target="_blank" rel="noopener" style={{ width: '100%' }}><IconWA size={18} />שאלה ליניר בוואטסאפ</a>
+              </>
+            ) : (
+              <>
+                <h3 id="pv-title" className="d" style={{ margin: 0, fontSize: 22 }}>סיכום ההזמנה</h3>
+                <ul className="ticks" style={{ fontSize: 15 }} aria-live="polite">
+                  {services.length ? SERVICES.filter(([id]) => services.includes(id)).map(([id, l]) => <li key={id}>{l}</li>) : <li>שירות — עוד לא נבחר</li>}
+                  <li>{dateLabel}{showHours ? ` · ${time} · ${durLabel}` : ''}</li>
+                  {isReh && <li>{st.band} · הקלטת ערוצים: {st.rec ? 'כן' : 'לא'}</li>}
+                  <li>{name || 'שם — עוד לא הוזן'}</li>
+                </ul>
+                {autoSend ? (
+                  <>
+                    <input type="text" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hp" value={hp} onChange={(e) => setHp(e.target.value)} />
+                    <button type="button" className="btn btn-wa" style={{ width: '100%' }} onClick={sendRequest} disabled={sending} aria-busy={sending}>
+                      <IconWA />{sending ? 'שולחים…' : 'שליחת בקשה ליניר'}
+                    </button>
+                    {sendErr && (
+                      <p role="alert" style={{ margin: 0, fontSize: 14, color: '#fca5a5', textAlign: 'center' }}>
+                        {sendErr}{' '}{sendErr.endsWith(':') && <a href={waLink(msg)} target="_blank" rel="noopener">שליחה בוואטסאפ</a>}
+                      </p>
+                    )}
+                    <p style={{ margin: 0, fontSize: 14, color: 'var(--muted)', textAlign: 'center' }}>
+                      הבקשה נשלחת ישירות ליניר בוואטסאפ — הוא יחזור אליכם בהקדם.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <a className="btn btn-wa" href={waLink(msg)} target="_blank" rel="noopener" style={{ width: '100%' }}>
+                      <IconWA />שליחת ההזמנה ליניר
+                    </a>
+                    <p style={{ margin: 0, fontSize: 14, color: 'var(--muted)', textAlign: 'center' }}>
+                      {name ? 'הכול מוכן — לחיצה אחת ונפתח וואטסאפ עם כל הפרטים.' : 'טיפ: הוסיפו שם כדי שיניר ידע למי לחזור.'}
+                    </p>
+                  </>
+                )}
+                <p className="note policy-note">{CANCEL_POLICY.short} <a href="/cancellation">מדיניות ביטולים</a></p>
+              </>
+            )}
+            {showQuote && (
+              <button type="button" className="btn btn-glass btn-sm" style={{ width: '100%' }} onClick={openQuote}>
+                הצעת מחיר ואישור תנאים (PDF)
+              </button>
+            )}
+          </aside>
+        </div>
+      )}
     </section>
   );
 }

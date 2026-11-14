@@ -29,6 +29,11 @@ function quoteLines(q) {
     if (/–/.test(it.price)) { open = true; return { desc: it.name, qty: '', unit: it.price, total: it.price }; }
     const unitPrice = num(it.price);
     const hourly = it.unit === 'לשעה';
+    // משך נבחר רק בחדר חזרות. שירות לפי שעה אחר (למשל השכרת אולפן) — יניר מתאים את משך הסשן
+    if (hourly && !(q.isReh && it.service === 'rehearsal')) {
+      open = true;
+      return { desc: it.name + (it.desc ? ' – ' + it.desc : ''), qty: 'לפי משך הסשן', unit: ils(unitPrice) + ' ' + it.unit, total: 'ייקבע מול יניר' };
+    }
     const qty = hourly ? (parseInt(q.dur, 10) || 1) : 1;
     total += unitPrice * qty;
     return { desc: it.name + (it.desc ? ' – ' + it.desc : ''), qty: hourly ? qty + ' שעות' : '1', unit: ils(unitPrice) + (it.unit ? ' ' + it.unit : ''), total: ils(unitPrice * qty) };

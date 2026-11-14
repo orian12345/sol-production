@@ -687,3 +687,10 @@ footer{background:#090c1e;border-top-color:var(--line-soft)}
 .ac-was{margin-inline-start:6px;font-size:12px;font-weight:500;color:#9a937f}
 .ac-coupon-tag{font-size:12.5px;font-weight:700;color:#f0d77a}
 @media (max-width:700px){.ac-coupon{margin:-6px 0 18px}}
+.dur-note{margin:0;min-height:50px;display:flex;align-items:center;padding:0 2px}
+/* booking locked until something is chosen from the price list */
+.bk-lock{display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;padding:40px 24px;max-width:640px;margin:0 auto}
+.bk-lock h3{margin:0;font-size:26px;font-weight:400}
+.bk-lock p{margin:0;color:var(--muted);font-size:16px;line-height:1.65}
+.bk-lock-ico{width:60px;height:60px;border-radius:18px;display:flex;align-items:center;justify-content:center;background:rgba(47,123,255,.14);color:var(--blue-l)}
+@media (max-width:700px){.bk-lock{padding:28px 18px}.bk-lock h3{font-size:22px}}

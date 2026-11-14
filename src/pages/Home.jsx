@@ -10,9 +10,9 @@ const QUICK = [
   { label: 'חדר חזרות', pick: { id: 'reh-base' } },
   { label: 'הקלטת קאבר', pick: { id: 'cover-playback' } },
   { label: 'ברכה לאירוע', pick: { id: 'greeting' } },
-  { label: 'הפקת סינגל', pick: { service: 'single' } },
-  { label: 'מיקס ומאסטרינג', pick: { service: 'mix' } },
-  { label: 'קליפים', pick: { service: 'clip' } },
+  { label: 'הפקת סינגל', pick: { id: 'single' } },
+  { label: 'מיקס ומאסטרינג', pick: { id: 'mixmaster' } },
+  { label: 'קליפים', pick: { id: 'clip-pro' } },
 ];
 
 const INITIAL = { services: [], band: '2–4 נגנים', rec: true, dur: '3', time: '19:00', selected: [], date: '', name: '', phone: '', email: '', notes: '' };
@@ -177,7 +177,7 @@ export default function Home() {
                 <li>כיוון קולות, מיקס ומאסטרינג</li>
                 <li>שירי בר / בת מצווה, ברכות ושירים לאירועים</li>
               </ul>
-              <a className="btn btn-glass btn-sm" href="#booking" onClick={() => pick({ service: 'single' })}>הזמנת סשן באולפן</a>
+              <a className="btn btn-glass btn-sm" href="#booking" onClick={() => pick({ id: 'studio-hour' })}>הזמנת סשן באולפן</a>
             </article>
             <article id="gear" className="glass lift room" style={{ scrollMarginTop: 110 }}>
               <div className="room-head"><span className="chip">Tech Specs</span><h3>המפרט הטכני</h3></div>
