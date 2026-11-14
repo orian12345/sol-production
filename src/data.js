@@ -36,7 +36,7 @@ export const PRICING = [
     { id: 'cover-acoustic', name: 'קאבר אקוסטי', desc: 'נגן חי – גיטרה או פסנתר + שירה', price: '₪1,500', service: 'cover' },
     { id: 'cover-original', name: 'הפקת קאבר מקורי', desc: 'עיבוד והפקה חדשים לשיר קיים', price: 'לפי הצעת מחיר אישית', quote: true, service: 'cover' },
     { id: 'studio-hour', name: 'השכרת אולפן הקלטות', desc: 'בפיקוח סאונדמן', price: '₪250', unit: 'לשעה', service: 'single' },
-    { id: 'combo-cover-clip', name: 'חבילת קאבר + קליפ אולפן', desc: 'הקלטת קאבר וצילום קליפ אולפן מקצועי בחבילה אחת', price: '₪2,100', old: '₪2,350', badge: 'חבילה · חיסכון של ₪250', service: 'cover' },
+    { id: 'combo-cover-clip', name: 'חבילת קאבר + קליפ אולפן', desc: 'הקלטת קאבר וצילום קליפ אולפן מקצועי בחבילה אחת', price: '₪2,350', badge: 'חבילה', service: 'cover' },
   ] },
   { id: 'rehearsal', label: 'חדר חזרות', perk: 'כולל עד 7 משדרי אוזניות (In-Ear)', items: [
     { id: 'reh-base', name: 'השכרת חדר חזרות', desc: 'בסיס, ללא סאונדמן', price: '₪120', unit: 'לשעה', service: 'rehearsal' },
