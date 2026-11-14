@@ -31,7 +31,7 @@ export const SOCIAL = {
 export const PRICING = [
   { id: 'vocals', label: 'הקלטות, בר מצווה וברכות', items: [
     { id: 'barmitzvah', name: 'שיר בר מצווה / בת מצווה', desc: 'כתיבה, הקלטה באולפן והפקת פלייבק אלקטרוני', price: '₪2,950', badge: 'שיר אישי לאירוע', service: 'write' },
-    { id: 'cover-playback', name: 'הקלטת קאבר על פלייבק קיים', desc: 'כולל תיקונים, מיקס ומאסטר', price: '₪750', old: '₪950', badge: 'חיסכון של ₪200', service: 'cover' },
+    { id: 'cover-playback', name: 'הקלטת קאבר על פלייבק קיים', desc: 'כולל תיקונים, מיקס ומאסטר', price: '₪650', old: '₪950', badge: 'חיסכון של ₪300', service: 'cover' },
     { id: 'greeting', name: 'הקלטת ברכה / דרשה לאירוע', desc: 'כולל מוזיקת רקע ועריכה', price: '₪500', service: 'greeting' },
     { id: 'cover-acoustic', name: 'קאבר אקוסטי', desc: 'נגן חי – גיטרה או פסנתר + שירה', price: '₪1,500', service: 'cover' },
     { id: 'cover-original', name: 'הפקת קאבר מקורי', desc: 'עיבוד והפקה חדשים לשיר קיים', price: 'לפי הצעת מחיר אישית', quote: true, service: 'cover' },

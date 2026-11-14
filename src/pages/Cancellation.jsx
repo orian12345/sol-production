@@ -3,7 +3,7 @@ import { TEL, PHONE, WA_HELLO } from '../data.js';
 
 const EXAMPLES = [
   ['חדר חזרות ל-2 שעות', 240],
-  ['הקלטת קאבר על פלייבק', 750],
+  ['הקלטת קאבר על פלייבק', 650],
   ['שיר בר / בת מצווה', 2950],
 ];
 const fee = (n) => Math.max(Math.round(n * 0.1), 50);
