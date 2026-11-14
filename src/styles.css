@@ -664,3 +664,6 @@ footer{background:#090c1e;border-top-color:var(--line-soft)}
   .hero{padding-top:24px}
   .music-grid.songs-only.swipe > *{flex-basis:84%}
 }
+/* music section (about + songs) now sits above the headline */
+.music-compact .wrap{padding-top:22px}
+@media (max-width:700px){.music-compact .wrap{padding-top:14px}}
