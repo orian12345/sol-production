@@ -17,7 +17,6 @@ const QUICK = [
 
 const INITIAL = { services: [], band: '2–4 נגנים', rec: true, dur: '3', time: '19:00', selected: [], date: '', name: '', phone: '', email: '', notes: '' };
 
-const WAVE = Array.from({ length: 48 }, (_, i) => 25 + ((i * 13 + 7) % 75));
 
 const yt = (q) => 'https://www.youtube.com/results?search_query=' + encodeURIComponent(q);
 
@@ -123,10 +122,10 @@ export default function Home() {
               </article>
 
               <article className="glass lift media">
-                <div className="media-thumb">
+                <a className="media-thumb has-img" style={{ backgroundImage: 'url(https://i.ytimg.com/vi/UlG1Isu8YTw/hqdefault.jpg)' }} href="https://youtu.be/UlG1Isu8YTw" target="_blank" rel="noopener" aria-label="צפייה ביוטיוב: סביב – יניר סול">
                   <span className="media-tag">סינגל מקורי</span>
-                  <div className="wave" aria-hidden="true">{WAVE.map((h, i) => <i key={i} style={{ height: h + '%' }} />)}</div>
-                </div>
+                  <span className="rel-play" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><polygon points="7 4 20 12 7 20 7 4" /></svg></span>
+                </a>
                 <div className="media-body">
                   <h3 className="d">סביב</h3>
                   <span className="media-sub">יניר סול</span>
