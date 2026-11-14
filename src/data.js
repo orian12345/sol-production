@@ -23,7 +23,7 @@ export const SOCIAL = {
   instagram: 'https://www.instagram.com/',
   tiktok: 'https://www.tiktok.com/',
   youtube: 'https://www.youtube.com/',
-  facebook: 'https://www.facebook.com/',
+  facebook: 'https://www.facebook.com/share/1FGxAwn7po/',
 };
 
 /* מחירון: price = מה שמוצג | priceText = מה שנכנס להודעת הוואטסאפ
