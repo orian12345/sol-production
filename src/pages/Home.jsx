@@ -133,7 +133,7 @@ export default function Home() {
                   <div className="media-actions">
                     <a className="pill" href={'https://open.spotify.com/search/' + encodeURIComponent('יניר סול סביב')} target="_blank" rel="noopener">Spotify</a>
                     <a className="pill" href={'https://music.apple.com/il/search?term=' + encodeURIComponent('יניר סול סביב')} target="_blank" rel="noopener">Apple Music</a>
-                    <a className="pill" href={yt('יניר סול סביב')} target="_blank" rel="noopener">YouTube</a>
+                    <a className="pill" href="https://youtu.be/UlG1Isu8YTw" target="_blank" rel="noopener">YouTube</a>
                   </div>
                 </div>
               </article>
