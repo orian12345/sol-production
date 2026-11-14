@@ -21,7 +21,7 @@ export const MAP_EMBED = `https://maps.google.com/maps?q=${Q}&z=16&output=embed`
 
 export const SOCIAL = {
   instagram: 'https://www.instagram.com/',
-  tiktok: 'https://www.tiktok.com/',
+  tiktok: 'https://www.tiktok.com/@yanir_sol_music',
   youtube: 'https://www.youtube.com/@YANIRSOL',
   facebook: 'https://www.facebook.com/share/1FGxAwn7po/',
 };
