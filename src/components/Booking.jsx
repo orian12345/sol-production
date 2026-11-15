@@ -168,8 +168,8 @@ export function Booking({ st, setSt }) {
   const openQuote = () => { window.location.href = '/quote#q=' + encodeURIComponent(JSON.stringify(quoteData())); };
 
   /* ---------- זרימת תשלום + הסכם (אחרי מילוי הפרטים) ----------
-     מופעלת יחד עם ההסכם (TERMS.approved), ובינתיים במצב הדגמה */
-  const flowOn = TERMS.approved || demo;
+     פעילה תמיד. אשראי (וביט/קבוצתי דרך הסליקה) נפתחים רק כש-Morning מחובר */
+  const flowOn = true;
   const [pmOpen, setPmOpen] = useState(false);
   const [flowErr, setFlowErr] = useState('');
   const openPayment = () => {
@@ -207,7 +207,7 @@ export function Booking({ st, setSt }) {
   };
   // העברה / PayBox / מזומן / קבוצתי — שולחים ליניר את הפרטים ואז להסכם
   const payOffline = async (id, label, status) => {
-    if (!demo && cfg.notify && id !== 'group') {
+    if (!demo && cfg.notify) {
       const reqLines = [(services.length > 1 ? 'שירותים: ' : 'שירות: ') + svcLabel];
       selected.forEach((x) => reqLines.push(`מהמחירון: ${x.name} (${priceLine(x)})`));
       if (coupon) reqLines.push(couponLine);

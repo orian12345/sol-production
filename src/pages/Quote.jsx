@@ -124,7 +124,11 @@ export default function Quote() {
 
   const { lines, total, open } = quoteLines(q);
   const isCash = /מזומן/.test(q.payMethod || '');
-  const termsToSign = isCash && TERMS.cashClause ? [...TERMS.sections, { title: 'תשלום במזומן – התחייבות', items: [TERMS.cashClause] }] : TERMS.sections;
+  // סעיפים שעוד מסומנים "[להשלים…]" לא מוצגים ללקוחות (רק בהדגמה)
+  const baseTerms = q.demo ? TERMS.sections : TERMS.sections
+    .map((sec) => ({ ...sec, items: sec.items.filter((i) => !i.trim().startsWith('[להשלים')).map((i) => i.replace(/\s*\[להשלים[^\]]*\]/g, '')) }))
+    .filter((sec) => sec.items.length);
+  const termsToSign = isCash && TERMS.cashClause ? [...baseTerms, { title: 'תשלום במזומן – התחייבות', items: [TERMS.cashClause] }] : baseTerms;
   const coupon = findCoupon(q.coupon);
   const discount = coupon && total ? Math.round(total * coupon.percent / 100) : 0;
   const validUntil = new Date(meta.issued + TERMS.quote.validDays * 86400000).toLocaleDateString('he-IL', { timeZone: 'Asia/Jerusalem' });
