@@ -115,7 +115,13 @@ export function PaymentModal({ open, onClose, deposit, online, demo, due, onOnli
             {method === 'bit' && !online && (
               <>
                 <h4>תשלום בביט</h4>
-                <p>מעבירים ל<b>{payee}</b> למספר:</p>
+                {PAYMENT.bitQr && (
+                  <figure className="pm-qr">
+                    <span className="pm-qr-img"><img src={PAYMENT.bitQr} alt={'קוד QR לתשלום בביט ל' + (PAYMENT.bitName || payee)} /></span>
+                    <figcaption>סורקים עם המצלמה של הטלפון — ביט נפתח ישר על העברה ל<b>{PAYMENT.bitName || payee}</b>.<br />כבר בטלפון? לחיצה ארוכה על הקוד ← "פתיחה בביט", או העברה למספר:</figcaption>
+                  </figure>
+                )}
+                {!PAYMENT.bitQr && <p>מעבירים ל<b>{PAYMENT.bitName || payee}</b> למספר:</p>}
                 <div className="pm-num"><b dir="ltr">{PAYMENT.bitPhone}</b><button type="button" className="pill" onClick={() => copy('bitnum', digits(PAYMENT.bitPhone))}>{copied === 'bitnum' ? 'הועתק ✓' : 'העתקה'}</button></div>
                 <AmountBox />
                 <button type="button" className="btn btn-glass pm-app" onClick={() => copyAndOpen('bit', amt ? String(amt) : digits(PAYMENT.bitPhone))}>{PAYMENT.bitUrl ? (amt ? 'פתיחת ביט (הסכום יועתק)' : 'פתיחת ביט') : (amt ? 'העתקת הסכום' : 'העתקת המספר')}</button>
