@@ -27,7 +27,7 @@ export const discountText = (price, percent) => {
 export const PAYMENT = {
   bank: { bankName: 'בנק לאומי (10)', branch: '676', account: '647032', holder: 'יניר סול' }, // בנק, סניף, מספר חשבון, שם בעל החשבון
   payboxUrl: '', // אופציונלי: קישור לדף התשלום של PayBox (מתחיל ב-https://). ריק = העברה למספר הטלפון
-  bitPhone: '054-903-0134',    // המספר שאליו מעבירים בביט
+  bitPhone: '050-303-9743',    // המספר שאליו מעבירים בביט
   payboxPhone: '054-903-0134', // המספר שאליו מעבירים ב-PayBox
   payee: 'יניר סול',           // השם שהלקוח יראה באפליקציה
 };
