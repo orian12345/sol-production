@@ -26,7 +26,7 @@ export const discountText = (price, percent) => {
    ביט / PayBox — העברה למספר הטלפון. העברה בנקאית — אם פרטי החשבון ריקים, יניר שולח אותם בוואטסאפ. אשראי — רק אחרי חיבור הסליקה (Morning). */
 export const PAYMENT = {
   bank: { bankName: 'בנק לאומי (10)', branch: '676', account: '647032', holder: 'יניר סול' }, // בנק, סניף, מספר חשבון, שם בעל החשבון
-  payboxUrl: '', // אופציונלי: קישור לדף התשלום של PayBox (מתחיל ב-https://). ריק = העברה למספר הטלפון
+  payboxUrl: 'https://links.payboxapp.com/XNeXUaSS57b', // קישור לקבוצת PayBox של יניר — פותח את PayBox ישר על הקבוצה. ריק = העברה למספר הטלפון
   bitPhone: '050-303-9743',    // המספר שאליו מעבירים בביט
   bitName: 'אוריאן נדה',       // השם שמופיע בביט
   bitQr: '/pay/bit-qr.png',     // קוד ה-QR של ביט (בתיקיית public/pay)

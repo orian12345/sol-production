@@ -182,14 +182,17 @@ export function PaymentModal({ open, onClose, deposit, online, demo, due, onOnli
               <>
                 <h4>תשלום ב-PayBox</h4>
                 {PAYMENT.payboxUrl
-                  ? <p>פותחים את דף התשלום של SOL Production ב-PayBox, משלמים, וחוזרים לכאן ללחוץ "שילמתי". השריון סופי אחרי שיניר מאשר שהתשלום התקבל.</p>
+                  ? <p>הכפתור פותח את PayBox ישר על קבוצת התשלום של <b>{payee}</b>. מצטרפים לקבוצה, משלמים את הסכום, וחוזרים לכאן ללחוץ "שילמתי". השריון סופי אחרי שיניר מאשר שהתשלום התקבל.</p>
                   : <>
                     <p>מעבירים ל<b>{payee}</b> למספר:</p>
                     <div className="pm-num"><b dir="ltr">{PAYMENT.payboxPhone}</b><button type="button" className="pill" onClick={() => copy('pbnum', digits(PAYMENT.payboxPhone))}>{copied === 'pbnum' ? 'הועתק ✓' : 'העתקה'}</button></div>
                   </>}
                 <AmountBox />
                 {PAYMENT.payboxUrl
-                  ? <a className="btn btn-glass pm-app" href={PAYMENT.payboxUrl} target="_blank" rel="noopener">פתיחת PayBox</a>
+                  ? <>
+                    <a className="btn btn-glass pm-app" href={PAYMENT.payboxUrl} target="_blank" rel="noopener" onClick={() => { if (amt) copy('pbamt', String(amt)); }}>{amt ? 'פתיחת PayBox (הסכום יועתק)' : 'פתיחת PayBox'}</a>
+                    {amt > 0 && <p className="pm-hint">{copied === 'pbamt' ? 'הסכום הועתק ✓ — ב-PayBox מדביקים אותו בתשלום לקבוצה.' : 'הסכום מועתק אוטומטית — ב-PayBox מדביקים אותו בתשלום לקבוצה.'}</p>}
+                  </>
                   : <>
                     <button type="button" className="btn btn-glass pm-app" onClick={() => copyAndOpen('paybox', amt ? String(amt) : digits(PAYMENT.payboxPhone))}>{amt ? 'העתקת הסכום' : 'העתקת המספר'}</button>
                     <p className="pm-hint">{appHint('PayBox', PAYMENT.payboxPhone, 'paybox')}</p>
