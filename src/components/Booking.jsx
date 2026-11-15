@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { SERVICES, BANDS, DURS, waLink, CANCEL_POLICY, findCoupon, discountText } from '../data.js';
 import { IconWA, IconClose } from './icons.jsx';
 import { TERMS } from '../terms.js';
@@ -172,6 +172,10 @@ export function Booking({ st, setSt }) {
      פעילה תמיד. אשראי (וביט/קבוצתי דרך הסליקה) נפתחים רק כש-Morning מחובר */
   const flowOn = true;
   const [pmOpen, setPmOpen] = useState(false);
+  // הסרגל "1 · מה תרצו?" חוזר להתחלה כשהבחירה משתנה, כדי שהשירות שנבחר ייראה
+  const svcRow = useRef(null);
+  const svcKey = services.join(',');
+  useEffect(() => { const el = svcRow.current; if (el && el.scrollWidth > el.clientWidth) el.scrollTo({ left: 0, behavior: 'smooth' }); }, [svcKey]);
   const [flowErr, setFlowErr] = useState('');
   const openPayment = () => {
     setFlowErr('');
@@ -311,8 +315,9 @@ export function Booking({ st, setSt }) {
           <form className="glass" noValidate onSubmit={(e) => { e.preventDefault(); if (paid) pay(); }}>
             <fieldset>
               <legend className="lbl">1 · מה תרצו? (אפשר לבחור כמה)</legend>
-              <div className="opts scroll-x">
-                {SERVICES.map(([id, label]) => pill(services.includes(id), () => toggleSvc(id), label, id))}
+              <div className="opts scroll-x" ref={svcRow}>
+                {/* מה שנבחר (גם מהמחירון) מופיע ראשון בסרגל */}
+                {[...SERVICES].sort((x, y) => services.includes(y[0]) - services.includes(x[0])).map(([id, label]) => pill(services.includes(id), () => toggleSvc(id), label, id))}
               </div>
             </fieldset>
 
