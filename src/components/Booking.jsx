@@ -107,7 +107,7 @@ export function Booking({ st, setSt }) {
   const freeOf = (t) => !slots || !!(slots.find((s) => s.time === t) || {}).free;
   const time = paid
     ? (slots && freeOf(st.time) && allTimes.includes(st.time) ? st.time : '')
-    : (allTimes.includes(st.time) ? st.time : allTimes[allTimes.length - 1]);
+    : (allTimes.includes(st.time) ? st.time : '');
 
   let dateLabel = 'גמיש – נתאם יחד';
   if (st.date) { const p = st.date.split('-'); dateLabel = `${p[2]}/${p[1]}/${p[0]}`; }
@@ -143,7 +143,7 @@ export function Booking({ st, setSt }) {
     selected.forEach((x) => reqLines.push(`מהמחירון: ${x.name} (${priceLine(x)})`));
     if (coupon) reqLines.push(couponLine);
     if (isReh) reqLines.push(`הרכב: ${st.band} · הקלטת ערוצים: ${st.rec ? 'כן' : 'לא'}`);
-    reqLines.push('תאריך: ' + dateLabel + (showHours ? ` · ${time} · ${durLabel}` : ''));
+    reqLines.push('תאריך: ' + dateLabel + (showHours ? ` · ${time || "—"} · ${durLabel}` : ''));
     if (st.email && st.email.trim()) reqLines.push('מייל: ' + st.email.trim());
     if (notes) reqLines.push('הערות: ' + notes);
     setSending(true);
@@ -211,7 +211,7 @@ export function Booking({ st, setSt }) {
       const reqLines = [(services.length > 1 ? 'שירותים: ' : 'שירות: ') + svcLabel];
       selected.forEach((x) => reqLines.push(`מהמחירון: ${x.name} (${priceLine(x)})`));
       if (coupon) reqLines.push(couponLine);
-      reqLines.push('תאריך: ' + dateLabel + (showHours ? ` · ${time} · ${durLabel}` : ''), `אמצעי תשלום: ${label}`, `סטטוס: ${status}`);
+      reqLines.push('תאריך: ' + dateLabel + (showHours ? ` · ${time || "—"} · ${durLabel}` : ''), `אמצעי תשלום: ${label}`, `סטטוס: ${status}`);
       if (notes) reqLines.push('הערות: ' + notes);
       await fetch('/api/request', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ kind: 'studio', name, phone: st.phone, lines: reqLines }) }).catch(() => {});
     }
@@ -465,7 +465,7 @@ export function Booking({ st, setSt }) {
                 <h3 id="pv-title" className="d" style={{ margin: 0, fontSize: 22 }}>סיכום ההזמנה</h3>
                 <ul className="ticks" style={{ fontSize: 15 }} aria-live="polite">
                   {services.length ? SERVICES.filter(([id]) => services.includes(id)).map(([id, l]) => <li key={id}>{l}</li>) : <li>שירות — עוד לא נבחר</li>}
-                  <li>{dateLabel}{showHours ? ` · ${time} · ${durLabel}` : ''}</li>
+                  <li>{dateLabel}{showHours ? ` · ${time || "—"} · ${durLabel}` : ''}</li>
                   {isReh && <li>{st.band} · הקלטת ערוצים: {st.rec ? 'כן' : 'לא'}</li>}
                   <li>{name || 'שם — עוד לא הוזן'}</li>
                 </ul>

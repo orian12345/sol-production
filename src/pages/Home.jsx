@@ -15,7 +15,7 @@ const QUICK = [
   { label: 'קליפים', pick: { id: 'clip-pro' } },
 ];
 
-const INITIAL = { services: [], band: '2–4 נגנים', rec: true, dur: '3', time: '19:00', selected: [], date: '', name: '', phone: '', email: '', notes: '' };
+const INITIAL = { services: [], band: '2–4 נגנים', rec: true, dur: '3', time: '', selected: [], date: '', name: '', phone: '', email: '', notes: '' };
 
 
 const yt = (q) => 'https://www.youtube.com/results?search_query=' + encodeURIComponent(q);
