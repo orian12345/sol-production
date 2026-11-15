@@ -734,3 +734,11 @@ footer{background:#090c1e;border-top-color:var(--line-soft)}
 .time-select option{background:#151b3a;color:#f3f5ff}
 .time-select option:disabled{color:#6b739a}
 @media (max-width:700px){.time-select{max-width:none}}
+/* payment modal: number + copy, open-app button */
+.pm-num{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-radius:14px;background:rgba(10,14,40,.7);border:1px solid var(--line,rgba(120,140,255,.25));margin:4px 0 12px}
+.pm-num b{font-size:22px;letter-spacing:.5px}
+.pm-app{width:100%;margin-bottom:8px}
+.pm-hint{font-size:13px;color:var(--muted);margin:0 0 12px}
+.pm-bank > div{display:grid;grid-template-columns:1fr auto;align-items:center;column-gap:8px}
+.pm-bank > div dt{grid-column:1 / -1}
+.pm-bank .pill{padding:4px 12px;font-size:13px;min-height:0}
