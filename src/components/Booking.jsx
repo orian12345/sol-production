@@ -40,7 +40,7 @@ export function Booking({ st, setSt }) {
   const priceLine = (x) => (coupon && priceOf(x) !== x.price ? `${priceOf(x)} במקום ${x.price}` : x.price);
   const couponLine = coupon ? `קופון ${coupon.label} – ${coupon.percent}% הנחה על החבילות שנבחרו` : '';
   const isReh = services.includes('rehearsal');
-  const showHours = paid || isReh || services.includes('write'); // שעת התחלה
+  const showHours = paid || isReh || services.includes('write') || services.includes('cover'); // שעת התחלה (גם בקאברים)
   const showDur = isReh; // משך הסשן — רק בחדר חזרות. בשאר השירותים יניר מתאים את משך הסשן
   const DUR_OTHER = 'יניר יתאים את משך הסשן';
   // לחיצה על שירות מוסיפה/מורידה אותו
