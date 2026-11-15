@@ -497,7 +497,7 @@ async function sendRequest(request, env) {
   }
 
   const lines = Array.isArray(b.lines) ? b.lines.slice(0, 25).map((l) => clip(l, 300)).filter(Boolean) : [];
-  const title = b.kind === 'academy' ? '🎸 SOL Academy – בקשה חדשה לשיעור (בלי תשלום)' : '🎙️ בקשה חדשה מהאתר – SOL Production (בלי תשלום)';
+  const title = b.kind === 'academy' ? '🎸 SOL Academy – בקשה חדשה לשיעור (בלי תשלום)' : b.kind === 'group' ? '💸 SOL Production – משתתף בתשלום קבוצתי עדכן ששילם' : '🎙️ בקשה חדשה מהאתר – SOL Production (בלי תשלום)';
   const sent = await notifyOwner(env, [title, ' ', ...lines, `שם: ${name}`, `טלפון: ${phone}`, ' ', `לחזור ללקוח בוואטסאפ: ${telLink(phone)}`].join('\n'));
   return sent ? json({ ok: true }) : json({ error: 'send_failed' }, 502);
 }

@@ -506,7 +506,7 @@ export function Booking({ st, setSt }) {
           </aside>
         </div>
       )}
-      <PaymentModal open={pmOpen} onClose={() => setPmOpen(false)} deposit={cfg.deposit || (demo ? 200 : 0)} online={paid || demo} demo={demo} due={pmOpen ? payAmount(quoteData()) : null}
+      <PaymentModal open={pmOpen} onClose={() => setPmOpen(false)} deposit={cfg.deposit || (demo ? 200 : 0)} online={paid || demo} demo={demo} due={pmOpen ? payAmount(quoteData()) : null} summary={{ svc: svcLabel, date: st.date ? dateLabel : '', time: showHours ? time : '', by: name }}
         onOnline={payOnline} onGroup={payGroup} onOffline={payOffline} />
     </section>
   );

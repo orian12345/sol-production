@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { PAYMENT } from '../data.js';
 import { IconClose, IconWA } from './icons.jsx';
+import { BitPanel, PayboxPanel, copyText } from './PayPanels.jsx';
 
 /* =====================================================================
    חלון "בחירת אמצעי תשלום" — נפתח אחרי מילוי פרטי ההזמנה.
@@ -12,16 +13,7 @@ import { IconClose, IconWA } from './icons.jsx';
 const ils = (n) => '₪' + Number(n).toLocaleString('en-US');
 const ico = (d) => <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{d}</svg>;
 
-/* העתקת הסכום / המספר, ופתיחת ביט דרך קישור התשלום האישי (PAYMENT.bitUrl) כשהוא קיים */
-const copyText = async (t) => {
-  try { await navigator.clipboard.writeText(t); return true; } catch { /* fallback */ }
-  try { const a = document.createElement('textarea'); a.value = t; a.setAttribute('readonly', ''); a.style.position = 'fixed'; a.style.opacity = '0'; document.body.appendChild(a); a.select(); const ok = document.execCommand('copy'); a.remove(); return ok; } catch { return false; }
-};
-// קישור תשלום ישיר (ביט / PayBox) — פותח את האפליקציה על העברה לאיש הקשר. בלי קישור לא מנווטים לשום מקום (לא לחנות)
-const APP_URL = { bit: () => PAYMENT.bitUrl, paybox: () => PAYMENT.payboxUrl };
-const openApp = (key) => { const u = APP_URL[key]?.(); if (!u) return false; window.location.href = u; return true; };
-
-export function PaymentModal({ open, onClose, deposit, online, demo, due, onOnline, onGroup, onOffline }) {
+export function PaymentModal({ open, onClose, deposit, online, demo, due, summary, onOnline, onGroup, onOffline }) {
   const [method, setMethod] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
@@ -29,10 +21,6 @@ export function PaymentModal({ open, onClose, deposit, online, demo, due, onOnli
   const [links, setLinks] = useState(null); // { urls, partAmount }
   const [copied, setCopied] = useState(''); // מה הועתק אחרון
   const copy = async (key, text) => { if (await copyText(text)) { setCopied(key); setTimeout(() => setCopied((c) => (c === key ? '' : c)), 2500); } };
-  const copyAndOpen = async (key, text) => {
-    await copy(key, text);
-    setTimeout(() => { if (!openApp(key)) setCopied(key + '-desk'); }, 350);
-  };
   const digits = (t) => String(t || '').replace(/\D/g, '');
   // הסכום להעברה (ביט / PayBox / בנק) — מחושב מהמחירון, אחרי קופון
   const amt = due && due.amount > 0 ? due.amount : 0;
@@ -40,9 +28,6 @@ export function PaymentModal({ open, onClose, deposit, online, demo, due, onOnli
   const AmountBox = () => amt ? (
     <div className="pm-num pm-amt"><span><small>סכום להעברה{amtNote ? <> · {amtNote}</> : null}</small><b dir="ltr">{ils(amt)}</b></span><button type="button" className="pill" onClick={() => copy('amt', String(amt))}>{copied === 'amt' ? 'הועתק ✓' : 'העתקה'}</button></div>
   ) : null;
-  const appHint = (name, phone, key) => copied === key + '-desk'
-    ? (amt ? `הסכום הועתק ✓ — פתחו את ${name}, בחרו "העברה" למספר ${phone} והדביקו את הסכום. אחר כך חוזרים לכאן ולוחצים "שילמתי".` : `המספר הועתק ✓ — פתחו את ${name}, בחרו "העברה" והדביקו אותו. אחר כך חוזרים לכאן ולוחצים "שילמתי".`)
-    : (amt ? `הסכום מועתק אוטומטית — ב${name} בוחרים "העברה", מקלידים את המספר ${phone}, ומדביקים את הסכום. אחר כך חוזרים לכאן ולוחצים "שילמתי".` : `המספר מועתק אוטומטית — ב${name} בוחרים "העברה" ומדביקים. אחר כך חוזרים לכאן ולוחצים "שילמתי".`);
   const boxRef = useRef(null);
 
   useEffect(() => {
@@ -59,7 +44,15 @@ export function PaymentModal({ open, onClose, deposit, online, demo, due, onOnli
   const bank = PAYMENT.bank || {};
   const hasBank = !!(bank.account || demo); // יש פרטי חשבון להצגה
   const payee = PAYMENT.payee || 'יניר סול';
-  const groupMsg = (n) => `היי! מתחלקים בתשלום על הסשן ב-SOL Production (${n} משתתפים).${due && due.amount > 0 ? ` החלק שלך: ${ils(Math.ceil(due.amount / n))}.` : ''} אפשר לשלם את החלק שלך בביט${PAYMENT.bitPhone ? ' למספר ' + PAYMENT.bitPhone : ''} או ב-PayBox${PAYMENT.payboxUrl ? ': ' + PAYMENT.payboxUrl : PAYMENT.payboxPhone ? ' למספר ' + PAYMENT.payboxPhone : ''} (${payee}). תודה!`;
+  // תשלום קבוצתי: לכל משתתף דף תשלום אישי (/pay) עם החלק שלו + ביט / PayBox / אשראי
+  const share = (n) => (amt ? Math.ceil(amt / n) : 0);
+  const partUrl = (i, n) => {
+    const d = { s: summary?.svc || '', d: summary?.date || '', t: summary?.time || '', b: summary?.by || '', a: share(n), i: i + 1, n };
+    return (typeof location !== 'undefined' ? location.origin : 'https://www.solproduction.co.il') + '/pay#d=' + encodeURIComponent(JSON.stringify(d));
+  };
+  const groupMsg = (i, n) => `היי! מתחלקים בתשלום על הסשן ב-SOL Production${summary?.by ? ' (הזמנה של ' + summary.by + ')' : ''}.${share(n) ? ` החלק שלך: ${ils(share(n))}.` : ''}
+כאן משלמים בביט, PayBox או אשראי:
+${partUrl(i, n)}`;
   const run = async (fn) => {
     setErr(''); setBusy(true);
     try { const r = await fn(); if (typeof r === 'string') setErr(r); else if (r && r.urls) setLinks(r); }
@@ -115,17 +108,7 @@ export function PaymentModal({ open, onClose, deposit, online, demo, due, onOnli
             {method === 'bit' && !online && (
               <>
                 <h4>תשלום בביט</h4>
-                {PAYMENT.bitQr && (
-                  <figure className="pm-qr">
-                    <span className="pm-qr-img"><img src={PAYMENT.bitQr} alt={'קוד QR לתשלום בביט ל' + (PAYMENT.bitName || payee)} /></span>
-                    <figcaption>סורקים עם המצלמה של הטלפון — ביט נפתח ישר על העברה ל<b>{PAYMENT.bitName || payee}</b>.<br />כבר בטלפון? לחיצה ארוכה על הקוד ← "פתיחה בביט", או העברה למספר:</figcaption>
-                  </figure>
-                )}
-                {!PAYMENT.bitQr && <p>מעבירים ל<b>{PAYMENT.bitName || payee}</b> למספר:</p>}
-                <div className="pm-num"><b dir="ltr">{PAYMENT.bitPhone}</b><button type="button" className="pill" onClick={() => copy('bitnum', digits(PAYMENT.bitPhone))}>{copied === 'bitnum' ? 'הועתק ✓' : 'העתקה'}</button></div>
-                <AmountBox />
-                <button type="button" className="btn btn-glass pm-app" onClick={() => copyAndOpen('bit', amt ? String(amt) : digits(PAYMENT.bitPhone))}>{PAYMENT.bitUrl ? (amt ? 'פתיחת ביט (הסכום יועתק)' : 'פתיחת ביט') : (amt ? 'העתקת הסכום' : 'העתקת המספר')}</button>
-                <p className="pm-hint">{appHint('ביט', PAYMENT.bitPhone, 'bit')}</p>
+                <BitPanel amt={amt} note={amtNote} />
                 <button type="button" className="btn btn-main" disabled={busy} onClick={() => run(() => onOffline('bit', 'ביט', 'שולם בביט – ממתין לאישור יניר'))}>שילמתי בביט – להמשך</button>
               </>
             )}
@@ -135,13 +118,14 @@ export function PaymentModal({ open, onClose, deposit, online, demo, due, onOnli
                 <h4>תשלום קבוצתי</h4>
                 {online
                   ? <p>המקדמה מתחלקת שווה בין המשתתפים. כל אחד מקבל קישור תשלום משלו — אפשר לשלוח לו בוואטסאפ. השעה נשמרת ל-60 דקות עד שמשולם החלק הראשון.</p>
-                  : <p>כל משתתף משלם את החלק שלו בביט או ב-PayBox. בוחרים כמה משתתפים, ושולחים לכל אחד הודעה בוואטסאפ עם הוראות התשלום.</p>}
+                  : <p>כל משתתף מקבל קישור לדף תשלום אישי עם החלק שלו, ומשלם בביט, PayBox או אשראי. בוחרים כמה משתתפים:</p>}
                 <label className="lbl" htmlFor="pm-people">כמה משתתפים?</label>
                 <div className="pm-people">
                   <button type="button" className="icon-btn" aria-label="פחות משתתפים" onClick={() => setPeople((p) => Math.max(2, p - 1))}>−</button>
                   <output id="pm-people" aria-live="polite">{people}</output>
                   <button type="button" className="icon-btn" aria-label="יותר משתתפים" onClick={() => setPeople((p) => Math.min(10, p + 1))}>+</button>
                   {deposit > 0 && online && <span className="pm-each">{ils(Math.ceil(deposit / people))} לכל משתתף</span>}
+                  {!online && share(people) > 0 && <span className="pm-each">{ils(share(people))} לכל משתתף</span>}
                 </div>
                 <button type="button" className="btn btn-main" disabled={busy} onClick={() => (online ? run(() => onGroup(people)) : setLinks({ offline: true, n: people }))}>{busy ? 'יוצרים קישורים…' : online ? 'יצירת קישורי תשלום' : 'המשך'}</button>
               </>
@@ -149,16 +133,17 @@ export function PaymentModal({ open, onClose, deposit, online, demo, due, onOnli
             {method === 'group' && links && links.offline && (
               <>
                 <h4>תשלום קבוצתי – {links.n} משתתפים</h4>
-                <p>שלחו לכל משתתף את ההודעה עם הוראות התשלום. השריון סופי אחרי שיניר מאשר שהתשלומים התקבלו.</p>
+                <p>שלחו לכל משתתף את הקישור שלו{share(links.n) ? <> ({ils(share(links.n))} לכל אחד)</> : null}. כל מי שמשלם לוחץ "שילמתי", ויניר מקבל הודעה. השריון סופי אחרי שהתשלומים מתקבלים.</p>
                 <ol className="pm-links">
                   {Array.from({ length: links.n }, (_, i) => (
                     <li key={i}>
                       <span>משתתף {i + 1}</span>
-                      <a className="pill" href={'https://wa.me/?text=' + encodeURIComponent(groupMsg(links.n))} target="_blank" rel="noopener"><IconWA size={16} />שליחה</a>
+                      <a className="pill" href={partUrl(i, links.n)} target="_blank" rel="noopener">פתיחה</a>
+                      <a className="pill" href={'https://wa.me/?text=' + encodeURIComponent(groupMsg(i, links.n))} target="_blank" rel="noopener"><IconWA size={16} />שליחה</a>
                     </li>
                   ))}
                 </ol>
-                <button type="button" className="btn btn-main" disabled={busy} onClick={() => run(() => onOffline('group', `תשלום קבוצתי (${links.n} משתתפים)`, 'ממתין לתשלומי המשתתפים (ביט / PayBox)'))}>המשך לחתימה על ההסכם</button>
+                <button type="button" className="btn btn-main" disabled={busy} onClick={() => run(() => onOffline('group', `תשלום קבוצתי (${links.n} משתתפים)`, 'ממתין לתשלומי המשתתפים (ביט / PayBox / אשראי)'))}>המשך לחתימה על ההסכם</button>
               </>
             )}
             {method === 'group' && links && !links.offline && (
@@ -181,22 +166,7 @@ export function PaymentModal({ open, onClose, deposit, online, demo, due, onOnli
             {method === 'paybox' && (
               <>
                 <h4>תשלום ב-PayBox</h4>
-                {PAYMENT.payboxUrl
-                  ? <p>הכפתור פותח את PayBox ישר על קבוצת התשלום של <b>{payee}</b>. מצטרפים לקבוצה, משלמים את הסכום, וחוזרים לכאן ללחוץ "שילמתי". השריון סופי אחרי שיניר מאשר שהתשלום התקבל.</p>
-                  : <>
-                    <p>מעבירים ל<b>{payee}</b> למספר:</p>
-                    <div className="pm-num"><b dir="ltr">{PAYMENT.payboxPhone}</b><button type="button" className="pill" onClick={() => copy('pbnum', digits(PAYMENT.payboxPhone))}>{copied === 'pbnum' ? 'הועתק ✓' : 'העתקה'}</button></div>
-                  </>}
-                <AmountBox />
-                {PAYMENT.payboxUrl
-                  ? <>
-                    <a className="btn btn-glass pm-app" href={PAYMENT.payboxUrl} target="_blank" rel="noopener" onClick={() => { if (amt) copy('pbamt', String(amt)); }}>{amt ? 'פתיחת PayBox (הסכום יועתק)' : 'פתיחת PayBox'}</a>
-                    {amt > 0 && <p className="pm-hint">{copied === 'pbamt' ? 'הסכום הועתק ✓ — ב-PayBox מדביקים אותו בתשלום לקבוצה.' : 'הסכום מועתק אוטומטית — ב-PayBox מדביקים אותו בתשלום לקבוצה.'}</p>}
-                  </>
-                  : <>
-                    <button type="button" className="btn btn-glass pm-app" onClick={() => copyAndOpen('paybox', amt ? String(amt) : digits(PAYMENT.payboxPhone))}>{amt ? 'העתקת הסכום' : 'העתקת המספר'}</button>
-                    <p className="pm-hint">{appHint('PayBox', PAYMENT.payboxPhone, 'paybox')}</p>
-                  </>}
+                <PayboxPanel amt={amt} note={amtNote} />
                 <button type="button" className="btn btn-main" disabled={busy} onClick={() => run(() => onOffline('paybox', 'PayBox', 'שולם ב-PayBox – ממתין לאישור יניר'))}>שילמתי – להמשך</button>
               </>
             )}
