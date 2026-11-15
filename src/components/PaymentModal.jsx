@@ -12,24 +12,14 @@ import { IconClose, IconWA } from './icons.jsx';
 const ils = (n) => '₪' + Number(n).toLocaleString('en-US');
 const ico = (d) => <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{d}</svg>;
 
-/* פתיחת אפליקציית תשלום: קודם מעתיקים את המספר / פרטי החשבון, ואז פותחים את האפליקציה.
-   (לביט ול-PayBox אין קישור רשמי שממלא מספר מראש — הלקוח רק מדביק.) */
-const APPS = {
-  bit: { android: 'com.bnhp.payments.paymentsapp', ios: 'https://apps.apple.com/il/app/bit/id1182007739' },
-  paybox: { android: 'com.payboxapp', ios: 'https://apps.apple.com/il/app/id895491053' },
-};
+/* העתקת הסכום / המספר, ופתיחת ביט דרך קישור התשלום האישי (PAYMENT.bitUrl) כשהוא קיים */
 const copyText = async (t) => {
   try { await navigator.clipboard.writeText(t); return true; } catch { /* fallback */ }
   try { const a = document.createElement('textarea'); a.value = t; a.setAttribute('readonly', ''); a.style.position = 'fixed'; a.style.opacity = '0'; document.body.appendChild(a); a.select(); const ok = document.execCommand('copy'); a.remove(); return ok; } catch { return false; }
 };
-const openApp = (key) => {
-  const app = APPS[key]; const ua = navigator.userAgent || '';
-  const play = 'https://play.google.com/store/apps/details?id=' + app.android;
-  if (/android/i.test(ua)) window.location.href = `intent:#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=${app.android};S.browser_fallback_url=${encodeURIComponent(play)};end`;
-  else if (/iphone|ipad|ipod/i.test(ua) || (/macintosh/i.test(ua) && 'ontouchend' in document)) window.location.href = app.ios;
-  else return false; // מחשב — אין אפליקציה לפתוח
-  return true;
-};
+// קישור תשלום ישיר (ביט / PayBox) — פותח את האפליקציה על העברה לאיש הקשר. בלי קישור לא מנווטים לשום מקום (לא לחנות)
+const APP_URL = { bit: () => PAYMENT.bitUrl, paybox: () => PAYMENT.payboxUrl };
+const openApp = (key) => { const u = APP_URL[key]?.(); if (!u) return false; window.location.href = u; return true; };
 
 export function PaymentModal({ open, onClose, deposit, online, demo, due, onOnline, onGroup, onOffline }) {
   const [method, setMethod] = useState('');
@@ -51,7 +41,7 @@ export function PaymentModal({ open, onClose, deposit, online, demo, due, onOnli
     <div className="pm-num pm-amt"><span><small>סכום להעברה{amtNote ? <> · {amtNote}</> : null}</small><b dir="ltr">{ils(amt)}</b></span><button type="button" className="pill" onClick={() => copy('amt', String(amt))}>{copied === 'amt' ? 'הועתק ✓' : 'העתקה'}</button></div>
   ) : null;
   const appHint = (name, phone, key) => copied === key + '-desk'
-    ? (amt ? `הסכום הועתק — פתחו את ${name} בטלפון, העבירו למספר ${phone} והדביקו את הסכום.` : `המספר הועתק — פתחו את ${name} בטלפון והדביקו אותו.`)
+    ? (amt ? `הסכום הועתק ✓ — פתחו את ${name}, בחרו "העברה" למספר ${phone} והדביקו את הסכום. אחר כך חוזרים לכאן ולוחצים "שילמתי".` : `המספר הועתק ✓ — פתחו את ${name}, בחרו "העברה" והדביקו אותו. אחר כך חוזרים לכאן ולוחצים "שילמתי".`)
     : (amt ? `הסכום מועתק אוטומטית — ב${name} בוחרים "העברה", מקלידים את המספר ${phone}, ומדביקים את הסכום. אחר כך חוזרים לכאן ולוחצים "שילמתי".` : `המספר מועתק אוטומטית — ב${name} בוחרים "העברה" ומדביקים. אחר כך חוזרים לכאן ולוחצים "שילמתי".`);
   const boxRef = useRef(null);
 
@@ -128,7 +118,7 @@ export function PaymentModal({ open, onClose, deposit, online, demo, due, onOnli
                 <p>מעבירים ל<b>{payee}</b> למספר:</p>
                 <div className="pm-num"><b dir="ltr">{PAYMENT.bitPhone}</b><button type="button" className="pill" onClick={() => copy('bitnum', digits(PAYMENT.bitPhone))}>{copied === 'bitnum' ? 'הועתק ✓' : 'העתקה'}</button></div>
                 <AmountBox />
-                <button type="button" className="btn btn-glass pm-app" onClick={() => copyAndOpen('bit', amt ? String(amt) : digits(PAYMENT.bitPhone))}>{amt ? 'פתיחת ביט (הסכום יועתק)' : 'פתיחת אפליקציית ביט'}</button>
+                <button type="button" className="btn btn-glass pm-app" onClick={() => copyAndOpen('bit', amt ? String(amt) : digits(PAYMENT.bitPhone))}>{PAYMENT.bitUrl ? (amt ? 'פתיחת ביט (הסכום יועתק)' : 'פתיחת ביט') : (amt ? 'העתקת הסכום' : 'העתקת המספר')}</button>
                 <p className="pm-hint">{appHint('ביט', PAYMENT.bitPhone, 'bit')}</p>
                 <button type="button" className="btn btn-main" disabled={busy} onClick={() => run(() => onOffline('bit', 'ביט', 'שולם בביט – ממתין לאישור יניר'))}>שילמתי בביט – להמשך</button>
               </>
@@ -195,7 +185,7 @@ export function PaymentModal({ open, onClose, deposit, online, demo, due, onOnli
                 {PAYMENT.payboxUrl
                   ? <a className="btn btn-glass pm-app" href={PAYMENT.payboxUrl} target="_blank" rel="noopener">פתיחת PayBox</a>
                   : <>
-                    <button type="button" className="btn btn-glass pm-app" onClick={() => copyAndOpen('paybox', amt ? String(amt) : digits(PAYMENT.payboxPhone))}>{amt ? 'פתיחת PayBox (הסכום יועתק)' : 'פתיחת אפליקציית PayBox'}</button>
+                    <button type="button" className="btn btn-glass pm-app" onClick={() => copyAndOpen('paybox', amt ? String(amt) : digits(PAYMENT.payboxPhone))}>{amt ? 'העתקת הסכום' : 'העתקת המספר'}</button>
                     <p className="pm-hint">{appHint('PayBox', PAYMENT.payboxPhone, 'paybox')}</p>
                   </>}
                 <button type="button" className="btn btn-main" disabled={busy} onClick={() => run(() => onOffline('paybox', 'PayBox', 'שולם ב-PayBox – ממתין לאישור יניר'))}>שילמתי – להמשך</button>
