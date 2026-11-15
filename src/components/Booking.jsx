@@ -3,6 +3,7 @@ import { SERVICES, BANDS, DURS, waLink, CANCEL_POLICY, findCoupon, discountText 
 import { IconWA, IconClose } from './icons.jsx';
 import { TERMS } from '../terms.js';
 import { PaymentModal } from './PaymentModal.jsx';
+import { payAmount } from '../quoteCalc.js';
 
 const OPEN = 10, CLOSE = 23;
 const ERRORS = {
@@ -505,7 +506,7 @@ export function Booking({ st, setSt }) {
           </aside>
         </div>
       )}
-      <PaymentModal open={pmOpen} onClose={() => setPmOpen(false)} deposit={cfg.deposit || (demo ? 200 : 0)} online={paid || demo} demo={demo}
+      <PaymentModal open={pmOpen} onClose={() => setPmOpen(false)} deposit={cfg.deposit || (demo ? 200 : 0)} online={paid || demo} demo={demo} due={pmOpen ? payAmount(quoteData()) : null}
         onOnline={payOnline} onGroup={payGroup} onOffline={payOffline} />
     </section>
   );

@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Layout, Brand } from '../components/Layout.jsx';
 import { IconWA } from '../components/icons.jsx';
-import { ALL_ITEMS, WA, waLink, findCoupon } from '../data.js';
+import { WA, waLink, findCoupon } from '../data.js';
+import { quoteLines, ils, asList } from '../quoteCalc.js';
 import { TERMS } from '../terms.js';
 
 /* =====================================================================
@@ -10,36 +11,8 @@ import { TERMS } from '../terms.js';
    אחרי חתימה: /quote?a=<מזהה> — עותק חתום שנשמר בשרת (אפשר לשלוח ליניר)
    ===================================================================== */
 
-const num = (s) => Number(String(s).replace(/[^\d]/g, '')) || 0;
-const ils = (n) => '₪' + n.toLocaleString('en-US');
 const fmtDate = (d) => { if (!d) return 'גמיש – נתאם יחד'; const p = d.split('-'); return `${p[2]}/${p[1]}/${p[0]}`; };
 const fmtStamp = (ms) => new Date(ms).toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem', dateStyle: 'short', timeStyle: 'short' });
-
-const asList = (sel) => (Array.isArray(sel) ? sel : sel ? [sel] : []);
-
-// שורה לכל פריט שנבחר מהמחירון; סה"כ רק לפריטים במחיר קבוע
-function quoteLines(q) {
-  const picked = asList(q.selected);
-  if (!picked.length) return { lines: [{ desc: q.svcLabel, qty: '', unit: '', total: 'ייקבע מול יניר' }], total: null, open: true };
-  let total = 0, open = false;
-  const lines = picked.map((sel) => {
-    const it = ALL_ITEMS.find((x) => x.id === sel.id);
-    if (!it) { open = true; return { desc: sel.name, qty: '', unit: sel.price || '', total: 'ייקבע מול יניר' }; }
-    if (it.quote) { open = true; return { desc: it.name, qty: '', unit: '', total: 'לפי הצעת מחיר אישית' }; }
-    if (/–/.test(it.price)) { open = true; return { desc: it.name, qty: '', unit: it.price, total: it.price }; }
-    const unitPrice = num(it.price);
-    const hourly = it.unit === 'לשעה';
-    // משך נבחר רק בחדר חזרות. שירות לפי שעה אחר (למשל השכרת אולפן) — יניר מתאים את משך הסשן
-    if (hourly && !(q.isReh && it.service === 'rehearsal')) {
-      open = true;
-      return { desc: it.name + (it.desc ? ' – ' + it.desc : ''), qty: 'לפי משך הסשן', unit: ils(unitPrice) + ' ' + it.unit, total: 'ייקבע מול יניר' };
-    }
-    const qty = hourly ? (parseInt(q.dur, 10) || 1) : 1;
-    total += unitPrice * qty;
-    return { desc: it.name + (it.desc ? ' – ' + it.desc : ''), qty: hourly ? qty + ' שעות' : '1', unit: ils(unitPrice) + (it.unit ? ' ' + it.unit : ''), total: ils(unitPrice * qty) };
-  });
-  return { lines, total: total > 0 ? total : null, open };
-}
 
 function SignaturePad({ onChange }) {
   const ref = useRef(null);

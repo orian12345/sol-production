@@ -31,7 +31,7 @@ const openApp = (key) => {
   return true;
 };
 
-export function PaymentModal({ open, onClose, deposit, online, demo, onOnline, onGroup, onOffline }) {
+export function PaymentModal({ open, onClose, deposit, online, demo, due, onOnline, onGroup, onOffline }) {
   const [method, setMethod] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
@@ -44,6 +44,15 @@ export function PaymentModal({ open, onClose, deposit, online, demo, onOnline, o
     setTimeout(() => { if (!openApp(key)) setCopied(key + '-desk'); }, 350);
   };
   const digits = (t) => String(t || '').replace(/\D/g, '');
+  // הסכום להעברה (ביט / PayBox / בנק) — מחושב מהמחירון, אחרי קופון
+  const amt = due && due.amount > 0 ? due.amount : 0;
+  const amtNote = due && !due.fixed ? 'לפריטים במחיר קבוע – השאר ייקבע מול יניר' : '';
+  const AmountBox = () => amt ? (
+    <div className="pm-num pm-amt"><span><small>סכום להעברה{amtNote ? <> · {amtNote}</> : null}</small><b dir="ltr">{ils(amt)}</b></span><button type="button" className="pill" onClick={() => copy('amt', String(amt))}>{copied === 'amt' ? 'הועתק ✓' : 'העתקה'}</button></div>
+  ) : null;
+  const appHint = (name, phone, key) => copied === key + '-desk'
+    ? (amt ? `הסכום הועתק — פתחו את ${name} בטלפון, העבירו למספר ${phone} והדביקו את הסכום.` : `המספר הועתק — פתחו את ${name} בטלפון והדביקו אותו.`)
+    : (amt ? `הסכום מועתק אוטומטית — ב${name} בוחרים "העברה", מקלידים את המספר ${phone}, ומדביקים את הסכום. אחר כך חוזרים לכאן ולוחצים "שילמתי".` : `המספר מועתק אוטומטית — ב${name} בוחרים "העברה" ומדביקים. אחר כך חוזרים לכאן ולוחצים "שילמתי".`);
   const boxRef = useRef(null);
 
   useEffect(() => {
@@ -60,7 +69,7 @@ export function PaymentModal({ open, onClose, deposit, online, demo, onOnline, o
   const bank = PAYMENT.bank || {};
   const hasBank = !!(bank.account || demo); // יש פרטי חשבון להצגה
   const payee = PAYMENT.payee || 'יניר סול';
-  const groupMsg = (n) => `היי! מתחלקים בתשלום על הסשן ב-SOL Production (${n} משתתפים). אפשר לשלם את החלק שלך בביט${PAYMENT.bitPhone ? ' למספר ' + PAYMENT.bitPhone : ''} או ב-PayBox${PAYMENT.payboxUrl ? ': ' + PAYMENT.payboxUrl : PAYMENT.payboxPhone ? ' למספר ' + PAYMENT.payboxPhone : ''} (${payee}). תודה!`;
+  const groupMsg = (n) => `היי! מתחלקים בתשלום על הסשן ב-SOL Production (${n} משתתפים).${due && due.amount > 0 ? ` החלק שלך: ${ils(Math.ceil(due.amount / n))}.` : ''} אפשר לשלם את החלק שלך בביט${PAYMENT.bitPhone ? ' למספר ' + PAYMENT.bitPhone : ''} או ב-PayBox${PAYMENT.payboxUrl ? ': ' + PAYMENT.payboxUrl : PAYMENT.payboxPhone ? ' למספר ' + PAYMENT.payboxPhone : ''} (${payee}). תודה!`;
   const run = async (fn) => {
     setErr(''); setBusy(true);
     try { const r = await fn(); if (typeof r === 'string') setErr(r); else if (r && r.urls) setLinks(r); }
@@ -118,8 +127,9 @@ export function PaymentModal({ open, onClose, deposit, online, demo, onOnline, o
                 <h4>תשלום בביט</h4>
                 <p>מעבירים ל<b>{payee}</b> למספר:</p>
                 <div className="pm-num"><b dir="ltr">{PAYMENT.bitPhone}</b><button type="button" className="pill" onClick={() => copy('bitnum', digits(PAYMENT.bitPhone))}>{copied === 'bitnum' ? 'הועתק ✓' : 'העתקה'}</button></div>
-                <button type="button" className="btn btn-glass pm-app" onClick={() => copyAndOpen('bit', digits(PAYMENT.bitPhone))}>פתיחת אפליקציית ביט</button>
-                <p className="pm-hint">{copied === 'bit-desk' ? 'המספר הועתק — פתחו את ביט בטלפון והדביקו אותו.' : 'המספר מועתק אוטומטית — בביט בוחרים "העברה" ומדביקים. אחר כך חוזרים לכאן ולוחצים "שילמתי".'}</p>
+                <AmountBox />
+                <button type="button" className="btn btn-glass pm-app" onClick={() => copyAndOpen('bit', amt ? String(amt) : digits(PAYMENT.bitPhone))}>{amt ? 'פתיחת ביט (הסכום יועתק)' : 'פתיחת אפליקציית ביט'}</button>
+                <p className="pm-hint">{appHint('ביט', PAYMENT.bitPhone, 'bit')}</p>
                 <button type="button" className="btn btn-main" disabled={busy} onClick={() => run(() => onOffline('bit', 'ביט', 'שולם בביט – ממתין לאישור יניר'))}>שילמתי בביט – להמשך</button>
               </>
             )}
@@ -181,11 +191,12 @@ export function PaymentModal({ open, onClose, deposit, online, demo, onOnline, o
                     <p>מעבירים ל<b>{payee}</b> למספר:</p>
                     <div className="pm-num"><b dir="ltr">{PAYMENT.payboxPhone}</b><button type="button" className="pill" onClick={() => copy('pbnum', digits(PAYMENT.payboxPhone))}>{copied === 'pbnum' ? 'הועתק ✓' : 'העתקה'}</button></div>
                   </>}
+                <AmountBox />
                 {PAYMENT.payboxUrl
                   ? <a className="btn btn-glass pm-app" href={PAYMENT.payboxUrl} target="_blank" rel="noopener">פתיחת PayBox</a>
                   : <>
-                    <button type="button" className="btn btn-glass pm-app" onClick={() => copyAndOpen('paybox', digits(PAYMENT.payboxPhone))}>פתיחת אפליקציית PayBox</button>
-                    <p className="pm-hint">{copied === 'paybox-desk' ? 'המספר הועתק — פתחו את PayBox בטלפון והדביקו אותו.' : 'המספר מועתק אוטומטית — ב-PayBox בוחרים "העברה" ומדביקים. אחר כך חוזרים לכאן ולוחצים "שילמתי". השריון סופי אחרי שיניר מאשר שהתשלום התקבל.'}</p>
+                    <button type="button" className="btn btn-glass pm-app" onClick={() => copyAndOpen('paybox', amt ? String(amt) : digits(PAYMENT.payboxPhone))}>{amt ? 'פתיחת PayBox (הסכום יועתק)' : 'פתיחת אפליקציית PayBox'}</button>
+                    <p className="pm-hint">{appHint('PayBox', PAYMENT.payboxPhone, 'paybox')}</p>
                   </>}
                 <button type="button" className="btn btn-main" disabled={busy} onClick={() => run(() => onOffline('paybox', 'PayBox', 'שולם ב-PayBox – ממתין לאישור יניר'))}>שילמתי – להמשך</button>
               </>
@@ -200,6 +211,7 @@ export function PaymentModal({ open, onClose, deposit, online, demo, onOnline, o
                   <div><dt>חשבון</dt><dd dir="ltr">{bank.account || (demo ? '000000' : '')}</dd><button type="button" className="pill" onClick={() => copy('account', bank.account || '')}>{copied === 'account' ? '✓' : 'העתקה'}</button></div>
                   <div><dt>על שם</dt><dd>{bank.holder || (demo ? 'יניר סול' : '')}</dd></div>
                 </dl> : null}
+                {hasBank && <AmountBox />}
                 {hasBank && <button type="button" className="btn btn-glass pm-app" onClick={() => copy('bankall', `${bank.bankName}
 סניף ${bank.branch}
 חשבון ${bank.account}
