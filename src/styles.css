@@ -727,3 +727,10 @@ footer{background:#090c1e;border-top-color:var(--line-soft)}
 .pm-bank dd{margin:0;font-weight:800}
 .pm-err{margin:0;color:#fca5a5;font-size:14px}
 @media (max-width:520px){.pm{padding:18px}.pm-grid{grid-template-columns:1fr}.pm-opt{min-height:60px}}
+/* start time: dropdown list instead of a sideways row */
+.time-select{-webkit-appearance:none;appearance:none;max-width:260px;cursor:pointer;
+  background-image:linear-gradient(45deg,transparent 50%,#6ea8ff 50%),linear-gradient(135deg,#6ea8ff 50%,transparent 50%);
+  background-position:16px 50%,22px 50%;background-size:6px 6px;background-repeat:no-repeat;padding-inline-end:40px;padding-inline-start:16px}
+.time-select option{background:#151b3a;color:#f3f5ff}
+.time-select option:disabled{color:#6b739a}
+@media (max-width:700px){.time-select{max-width:none}}

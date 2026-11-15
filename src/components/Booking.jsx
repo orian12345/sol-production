@@ -358,12 +358,13 @@ export function Booking({ st, setSt }) {
                   <p className="note" style={{ margin: 0 }}>{showDur ? 'אין שעות פנויות ביום הזה במשך שנבחר. נסו יום אחר או משך קצר יותר.' : 'אין שעות פנויות ביום הזה. נסו יום אחר.'}</p>
                 )}
                 {(!paid || (st.date && !loadingSlots && slots)) && (
-                  <div className="opts scroll-x" dir="ltr" style={{ justifyContent: 'flex-end' }}>
+                  <select id="bk-time" className="field time-select" aria-label="שעת התחלה" value={time} onChange={(e) => set({ time: e.target.value })}>
+                    <option value="">בחרו שעה</option>
                     {allTimes.map((t) => {
                       const free = !paid || freeOf(t);
-                      return pill(time === t, () => set({ time: t }), free ? t : t + ' · תפוס', t, !free);
+                      return <option key={t} value={t} disabled={!free}>{free ? t : t + ' · תפוס'}</option>;
                     })}
-                  </div>
+                  </select>
                 )}
               </fieldset>
             )}
