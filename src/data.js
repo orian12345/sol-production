@@ -22,6 +22,13 @@ export const discountText = (price, percent) => {
   return String(price).replace(/₪([\d,]+)/g, (_, n) => '₪' + Math.round(Number(n.replace(/,/g, '')) * (100 - percent) / 100).toLocaleString('en-US'));
 };
 
+/* אמצעי תשלום שמוצגים אחרי מילוי ההזמנה.
+   העברה בנקאית ו-PayBox מופיעים רק אחרי שממלאים כאן את הפרטים. אשראי / ביט / קבוצתי — דרך Morning (כשמחובר). */
+export const PAYMENT = {
+  bank: { bankName: '', branch: '', account: '', holder: '' }, // להשלים: בנק, סניף, מספר חשבון, שם בעל החשבון
+  payboxUrl: '', // להשלים: קישור לדף התשלום של PayBox (מתחיל ב-https://)
+};
+
 export const PHONE = '054-903-0134';
 export const TEL = 'tel:+972549030134';
 export const ADDRESS = 'הראשונים 41, אור יהודה';

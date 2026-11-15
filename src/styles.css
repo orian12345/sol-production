@@ -694,3 +694,36 @@ footer{background:#090c1e;border-top-color:var(--line-soft)}
 .bk-lock p{margin:0;color:var(--muted);font-size:16px;line-height:1.65}
 .bk-lock-ico{width:60px;height:60px;border-radius:18px;display:flex;align-items:center;justify-content:center;background:rgba(47,123,255,.14);color:var(--blue-l)}
 @media (max-width:700px){.bk-lock{padding:28px 18px}.bk-lock h3{font-size:22px}}
+
+/* ===== payment method modal ===== */
+.pm-back{position:fixed;inset:0;z-index:200;background:rgba(5,8,22,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:16px}
+.pm{width:100%;max-width:620px;max-height:calc(100vh - 32px);overflow:auto;padding:24px;display:flex;flex-direction:column;gap:14px;outline:none}
+.pm-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.pm-head h3{margin:0;font-size:26px;font-weight:400}
+.pm-sub{margin:0;color:var(--muted);font-size:15px;line-height:1.6}
+.pm-demo{margin:0;font-size:13px;color:#c4d6ff;background:rgba(47,123,255,.12);border:1px dashed var(--blue-l);border-radius:10px;padding:6px 10px}
+.pm-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.pm-opt{display:flex;align-items:center;gap:12px;min-height:70px;padding:12px 14px;border-radius:16px;border:1px solid var(--line);background:rgba(21,27,58,.7);color:var(--ink);text-align:start;cursor:pointer;transition:border-color .2s,box-shadow .2s,transform .2s}
+.pm-opt:hover:not(:disabled){border-color:var(--blue-l);box-shadow:0 0 18px var(--glow-b);transform:translateY(-2px)}
+.pm-opt:disabled{opacity:.45;cursor:not-allowed}
+.pm-ico{flex:none;width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:rgba(47,123,255,.14);color:var(--blue-l)}
+.pm-txt{display:flex;flex-direction:column;gap:2px;min-width:0}
+.pm-txt b{font:700 16px "Heebo"}
+.pm-txt small{font-size:12.5px;color:var(--muted)}
+.pm-step{display:flex;flex-direction:column;gap:12px}
+.pm-step h4{margin:0;font:800 20px "Heebo"}
+.pm-step p{margin:0;color:#d6dcf5;font-size:15px;line-height:1.65}
+.pm-backlink{align-self:flex-start;background:none;border:0;color:var(--blue-l);font:600 14px "Heebo";cursor:pointer;padding:4px 0}
+.pm-people{display:flex;align-items:center;gap:12px}
+.pm-people output{min-width:32px;text-align:center;font:800 22px "Heebo"}
+.pm-each{color:var(--muted);font-size:14px}
+.pm-links{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px}
+.pm-links li{display:flex;align-items:center;gap:8px;justify-content:space-between;padding:8px 12px;border-radius:12px;background:rgba(21,27,58,.7);border:1px solid var(--line)}
+.pm-links li span{flex:1;font-weight:600}
+.pm-links .pill{min-height:38px;padding:0 12px;font-size:13px}
+.pm-bank{margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.pm-bank div{padding:10px 12px;border-radius:12px;background:rgba(21,27,58,.7);border:1px solid var(--line)}
+.pm-bank dt{font-size:12px;color:var(--muted)}
+.pm-bank dd{margin:0;font-weight:800}
+.pm-err{margin:0;color:#fca5a5;font-size:14px}
+@media (max-width:520px){.pm{padding:18px}.pm-grid{grid-template-columns:1fr}.pm-opt{min-height:60px}}

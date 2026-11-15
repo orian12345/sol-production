@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { SERVICES, BANDS, DURS, waLink, CANCEL_POLICY, findCoupon, discountText } from '../data.js';
 import { IconWA, IconClose } from './icons.jsx';
 import { TERMS } from '../terms.js';
+import { PaymentModal } from './PaymentModal.jsx';
 
 const OPEN = 10, CLOSE = 23;
 const ERRORS = {
@@ -61,7 +62,13 @@ export function Booking({ st, setSt }) {
       setTimeout(() => document.getElementById('booking')?.scrollIntoView({ behavior: 'smooth' }), 100);
       return;
     }
-    if (q.get('booked')) setResult('booked');
+    if (q.get('booked')) {
+      // חזרה מדף התשלום → ממשיכים ישר לחתימה על ההסכם
+      let pending = null;
+      try { pending = sessionStorage.getItem('sol-pending'); sessionStorage.removeItem('sol-pending'); } catch { /* ignore */ }
+      if (pending) { window.location.replace('/quote#q=' + encodeURIComponent(pending)); return; }
+      setResult('booked');
+    }
     else if (q.get('payfail')) setResult('failed');
     if (q.get('booked') || q.get('payfail')) {
       const u = new URL(window.location.href);
@@ -154,12 +161,61 @@ export function Booking({ st, setSt }) {
 
   // הצעת מחיר + אישור תקנון (מוצג ללקוחות רק אחרי שהתקנון אושר — אחרת רק בהדגמה)
   const showQuote = TERMS.approved || demo;
-  const openQuote = () => {
-    const data = {
-      svcLabel, selected, coupon: coupon ? coupon.code : '', date: st.date, time: showHours ? time : '', dur: String(dur), durLabel: showHours ? durLabel : '',
-      band: isReh ? st.band : '', rec: isReh && st.rec, isReh, name, phone: (st.phone || '').trim(), email: (st.email || '').trim(), notes, demo,
-    };
-    window.location.href = '/quote#q=' + encodeURIComponent(JSON.stringify(data));
+  const quoteData = (extra = {}) => ({
+    svcLabel, selected, coupon: coupon ? coupon.code : '', date: st.date, time: showHours ? time : '', dur: String(dur), durLabel: showHours ? durLabel : '',
+    band: isReh ? st.band : '', rec: isReh && st.rec, isReh, name, phone: (st.phone || '').trim(), email: (st.email || '').trim(), notes, demo, ...extra,
+  });
+  const openQuote = () => { window.location.href = '/quote#q=' + encodeURIComponent(JSON.stringify(quoteData())); };
+
+  /* ---------- זרימת תשלום + הסכם (אחרי מילוי הפרטים) ----------
+     מופעלת יחד עם ההסכם (TERMS.approved), ובינתיים במצב הדגמה */
+  const flowOn = TERMS.approved || demo;
+  const [pmOpen, setPmOpen] = useState(false);
+  const [flowErr, setFlowErr] = useState('');
+  const openPayment = () => {
+    setFlowErr('');
+    if (!services.length) { setFlowErr(ERRORS.no_service); return; }
+    if (!st.date || (showHours && !time)) { setFlowErr(ERRORS.bad_slot); return; }
+    if (!name || (st.phone || '').replace(/\D/g, '').length < 9) { setFlowErr(ERRORS.missing_contact); return; }
+    setPmOpen(true);
+  };
+  const goAgreement = (payMethod, payStatus) => {
+    window.location.href = '/quote#q=' + encodeURIComponent(JSON.stringify(quoteData({ payMethod, payStatus })));
+  };
+  const bookBody = (extra) => JSON.stringify({
+    serviceLabel: svcLabel, selected: selected.map((x) => `${x.name} (${priceLine(x)})`).join(' · ') + (coupon ? ' · ' + couponLine : ''),
+    date: st.date, time, dur, name, phone: st.phone, email: st.email, notes,
+    band: isReh ? st.band : '', rec: isReh && st.rec, ...extra,
+  });
+  // אשראי / ביט — דף התשלום של Morning, וחזרה לכאן → הסכם
+  const payOnline = async (group, label) => {
+    if (demo) { goAgreement(label, 'שולמה מקדמה ✓ (הדגמה)'); return; }
+    try { sessionStorage.setItem('sol-pending', JSON.stringify(quoteData({ payMethod: label, payStatus: 'שולמה מקדמה ✓' }))); } catch { /* ignore */ }
+    const r = await fetch('/api/book', { method: 'POST', headers: { 'content-type': 'application/json' }, body: bookBody({ group, payMethod: label }) });
+    const j = await r.json().catch(() => ({}));
+    if (r.ok && j.url) { window.location.href = j.url; return; }
+    if (j.error === 'slot_taken') setSlots((s) => (s ? s.map((x) => (x.time === time ? { ...x, free: false } : x)) : s));
+    return ERRORS[j.error] || ERRORS.payment_unavailable;
+  };
+  // תשלום קבוצתי — קישור תשלום לכל משתתף
+  const payGroup = async (n) => {
+    if (demo) return { urls: Array.from({ length: n }, (_, i) => `https://example.com/demo-pay/${i + 1}`), partAmount: Math.ceil((cfg.deposit || 200) / n) };
+    const r = await fetch('/api/book', { method: 'POST', headers: { 'content-type': 'application/json' }, body: bookBody({ split: n, payMethod: 'תשלום קבוצתי' }) });
+    const j = await r.json().catch(() => ({}));
+    if (r.ok && j.urls) return j;
+    return ERRORS[j.error] || ERRORS.payment_unavailable;
+  };
+  // העברה / PayBox / מזומן / קבוצתי — שולחים ליניר את הפרטים ואז להסכם
+  const payOffline = async (id, label, status) => {
+    if (!demo && cfg.notify && id !== 'group') {
+      const reqLines = [(services.length > 1 ? 'שירותים: ' : 'שירות: ') + svcLabel];
+      selected.forEach((x) => reqLines.push(`מהמחירון: ${x.name} (${priceLine(x)})`));
+      if (coupon) reqLines.push(couponLine);
+      reqLines.push('תאריך: ' + dateLabel + (showHours ? ` · ${time} · ${durLabel}` : ''), `אמצעי תשלום: ${label}`, `סטטוס: ${status}`);
+      if (notes) reqLines.push('הערות: ' + notes);
+      await fetch('/api/request', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ kind: 'studio', name, phone: st.phone, lines: reqLines }) }).catch(() => {});
+    }
+    goAgreement(label, status);
   };
 
   const canPay = paid && services.length > 0 && st.date && time && name && (st.phone || '').replace(/\D/g, '').length >= 9;
@@ -370,7 +426,21 @@ export function Booking({ st, setSt }) {
               </div>
             )}
 
-            {paid ? (
+            {flowOn ? (
+              <>
+                <h3 id="pv-title" className="d" style={{ margin: 0, fontSize: 22 }}>סיכום ההזמנה</h3>
+                <ul className="ticks" style={{ fontSize: 15 }} aria-live="polite">
+                  {services.length ? SERVICES.filter(([id]) => services.includes(id)).map(([id, l]) => <li key={id}>{l}</li>) : <li>שירות — עוד לא נבחר</li>}
+                  <li>{st.date ? dateLabel : 'תאריך — עוד לא נבחר'}{showHours && time ? ' · ' + time : ''}{showHours ? ' · ' + durLabel : ''}</li>
+                  <li>{name || 'שם — עוד לא הוזן'}</li>
+                </ul>
+                <button type="button" className="btn btn-main" style={{ width: '100%' }} onClick={openPayment}>המשך לתשלום ולהסכם</button>
+                {flowErr && <p role="alert" style={{ margin: 0, fontSize: 14, color: '#fca5a5', textAlign: 'center' }}>{flowErr}</p>}
+                <p className="note" style={{ margin: 0, textAlign: 'center' }}>אשראי · ביט · PayBox · העברה בנקאית · תשלום קבוצתי · מזומן</p>
+                <p className="note policy-note">{CANCEL_POLICY.short} <a href="/cancellation">מדיניות ביטולים</a></p>
+                <a className="btn btn-glass btn-sm" href={waLink(msg)} target="_blank" rel="noopener" style={{ width: '100%' }}><IconWA size={18} />שאלה ליניר בוואטסאפ</a>
+              </>
+            ) : paid ? (
               <>
                 <h3 id="pv-title" className="d" style={{ margin: 0, fontSize: 22 }}>סיכום ושריון</h3>
                 <ul className="ticks" style={{ fontSize: 15 }}>
@@ -426,7 +496,7 @@ export function Booking({ st, setSt }) {
                 <p className="note policy-note">{CANCEL_POLICY.short} <a href="/cancellation">מדיניות ביטולים</a></p>
               </>
             )}
-            {showQuote && (
+            {showQuote && !flowOn && (
               <button type="button" className="btn btn-glass btn-sm" style={{ width: '100%' }} onClick={openQuote}>
                 הצעת מחיר ואישור תנאים (PDF)
               </button>
@@ -434,6 +504,8 @@ export function Booking({ st, setSt }) {
           </aside>
         </div>
       )}
+      <PaymentModal open={pmOpen} onClose={() => setPmOpen(false)} deposit={cfg.deposit || (demo ? 200 : 0)} online={paid || demo} demo={demo}
+        onOnline={payOnline} onGroup={payGroup} onOffline={payOffline} />
     </section>
   );
 }

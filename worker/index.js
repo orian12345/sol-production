@@ -139,10 +139,16 @@ async function book(request, url, env) {
   if (start < Date.now() + 3600 * 1000) return json({ error: 'bad_slot' }, 400);
   if (overlaps(await busyRanges(env, b.date), start, end)) return json({ error: 'slot_taken' }, 409);
 
+  // אמצעי תשלום בדף של Morning: 100 = אשראי, 120 = ביט (אחר — ברירת המחדל של העסק)
+  const group = [100, 120, 150, 160].includes(Number(b.group)) ? Number(b.group) : undefined;
+  // תשלום קבוצתי: המקדמה מתחלקת ל-n קישורים, אחד לכל משתתף
+  const parts = Math.min(10, Math.max(1, parseInt(b.split, 10) || 1));
+  const partAmount = Math.ceil(deposit / parts);
+
   const id = crypto.randomUUID();
   const secret = crypto.randomUUID().replace(/-/g, '');
   const booking = {
-    id, secret, status: 'pending', created: Date.now(), start, end, date: b.date, time: b.time, dur,
+    id, secret, status: 'pending', created: Date.now(), start, end, date: b.date, time: b.time, dur, parts, paidParts: [],
     name, phone, email,
     service: String(b.serviceLabel || '').slice(0, 120),
     pkg: String(b.selected || '').slice(0, 160),
@@ -150,32 +156,36 @@ async function book(request, url, env) {
     notes: String(b.notes || '').slice(0, 500),
   };
   await env.BOOKINGS.put('booking:' + id, JSON.stringify(booking), { expirationTtl: 60 * 60 * 24 * 14 });
-  await env.BOOKINGS.put('hold:' + b.date + ':' + id, JSON.stringify({ start, end }), { expirationTtl: HOLD_MINUTES * 60 });
+  // בתשלום קבוצתי נותנים לחברים יותר זמן לשלם (60 דק') לפני שהשעה משתחררת
+  await env.BOOKINGS.put('hold:' + b.date + ':' + id, JSON.stringify({ start, end }), { expirationTtl: (parts > 1 ? 60 : HOLD_MINUTES) * 60 });
 
   const site = (env.SITE_URL || url.origin).replace(/\/$/, '');
   const [y, m, d] = b.date.split('-');
   const when = `${d}/${m}/${y} ${b.time}`;
-  const form = await morning(env, '/payments/form', {
-    description: `מקדמה לשריון סשן ב-SOL Production – ${when}`,
+  const makeForm = (part) => morning(env, '/payments/form', {
+    description: `מקדמה לשריון סשן ב-SOL Production – ${when}` + (parts > 1 ? ` (חלק ${part}/${parts})` : ''),
     type: Number(env.MORNING_DOC_TYPE || 400),
-    amount: deposit,
+    amount: parts > 1 ? partAmount : deposit,
     currency: 'ILS',
     vatType: 0,
     lang: 'he',
     maxPayments: 1,
-    client: { name, phone, mobile: phone, emails: email ? [email] : undefined, add: true },
-    remarks: [booking.service, booking.pkg, `משך: ${dur} שעות`].filter(Boolean).join(' · '),
+    ...(group ? { group } : {}),
+    client: { name: parts > 1 ? `${name} (קבוצה – חלק ${part}/${parts})` : name, phone, mobile: phone, emails: email && part === 1 ? [email] : undefined, add: part === 1 },
+    remarks: [booking.service, booking.pkg, b.payMethod && `אמצעי תשלום: ${String(b.payMethod).slice(0, 30)}`].filter(Boolean).join(' · '),
     successUrl: `${site}/?booked=1#booking`,
     failureUrl: `${site}/?payfail=1#booking`,
-    notifyUrl: `${url.origin}/api/morning-notify?id=${id}&k=${secret}`,
-    custom: id,
+    notifyUrl: `${url.origin}/api/morning-notify?id=${id}&k=${secret}&part=${part}`,
+    custom: id + ':' + part,
   });
-  if (!form || !form.url) {
-    console.error('morning form failed', JSON.stringify(form));
+  const forms = await Promise.all(Array.from({ length: parts }, (_, i) => makeForm(i + 1)));
+  if (forms.some((f) => !f || !f.url)) {
+    console.error('morning form failed', JSON.stringify(forms));
     await env.BOOKINGS.delete('hold:' + b.date + ':' + id);
     return json({ error: 'payment_unavailable' }, 502);
   }
-  return json({ url: form.url });
+  if (parts > 1) return json({ urls: forms.map((f) => f.url), partAmount });
+  return json({ url: forms[0].url });
 }
 
 /* ---------- Morning מודיעה שהתשלום עבר → נכנס ליומן ---------- */
@@ -187,7 +197,17 @@ async function notify(request, url, env) {
   if (!raw) return json({ ok: false }, 404);
   const bk = JSON.parse(raw);
   if (!key || key !== bk.secret) return json({ ok: false }, 403);
-  if (bk.status === 'paid') return json({ ok: true }); // הודעה כפולה — כבר טופל
+
+  // תשלום קבוצתי: כל חלק מעדכן; השריון ביומן נכנס בתשלום הראשון
+  const part = parseInt(url.searchParams.get('part'), 10) || 1;
+  bk.paidParts = bk.paidParts || [];
+  if (bk.paidParts.includes(part)) return json({ ok: true }); // הודעה כפולה — כבר טופל
+  if (bk.status === 'paid') {
+    bk.paidParts.push(part);
+    await env.BOOKINGS.put('booking:' + id, JSON.stringify(bk), { expirationTtl: 60 * 60 * 24 * 90 });
+    await notifyOwner(env, [`💳 תשלום קבוצתי – שולם חלק ${part}/${bk.parts} (${bk.paidParts.length}/${bk.parts} שולמו)`, `לקוח: ${bk.name} · ${bk.phone}`, `מועד: ${ilDate(bk.start)}`].join('\n')).catch(() => {});
+    return json({ ok: true });
+  }
 
   let payload = '';
   try { payload = (await request.text()).slice(0, 4000); } catch { /* ignore */ }
@@ -224,11 +244,12 @@ async function notify(request, url, env) {
   }
   bk.status = 'paid';
   bk.paidAt = Date.now();
+  bk.paidParts.push(part);
   bk.notifyPayload = payload;
   await env.BOOKINGS.put('booking:' + id, JSON.stringify(bk), { expirationTtl: 60 * 60 * 24 * 90 });
   await env.BOOKINGS.delete('hold:' + bk.date + ':' + id);
   await notifyOwner(env, [
-    '🎙️ הזמנה חדשה באולפן – שולמה מקדמה',
+    bk.parts > 1 ? `🎙️ הזמנה חדשה באולפן – תשלום קבוצתי: שולם חלק ${part}/${bk.parts} (השעה שוריינה)` : '🎙️ הזמנה חדשה באולפן – שולמה מקדמה',
     ' ',
     `מועד: ${ilDate(bk.start)} (${bk.dur} שעות)`,
     `שירות: ${bk.service}`, bk.pkg && `מהמחירון: ${bk.pkg}`,
@@ -386,6 +407,7 @@ async function saveAgreement(request, env) {
     band: clip(q.band, 40), rec: !!q.rec, isReh: !!q.isReh, name: clip(q.name, 100), phone: clip(q.phone, 30), email: clip(q.email, 120), notes: clip(q.notes, 500),
     selected: (Array.isArray(q.selected) ? q.selected : q.selected ? [q.selected] : []).slice(0, 20).map((x) => ({ id: clip(x && x.id, 40), name: clip(x && x.name, 120), price: clip(x && x.price, 60) })),
     coupon: couponOf(q.coupon) ? couponOf(q.coupon).code : '', // רק קוד תקין נשמר — אי אפשר לזייף הנחה
+    payMethod: clip(q.payMethod, 30), payStatus: clip(q.payStatus, 60),
   };
   const terms = b.terms.slice(0, 20).map((s) => ({ title: clip(s.title, 120), items: (Array.isArray(s.items) ? s.items : []).slice(0, 20).map((t) => clip(t, 1000)) }));
   const id = crypto.randomUUID();

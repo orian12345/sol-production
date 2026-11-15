@@ -123,6 +123,8 @@ export default function Quote() {
   }
 
   const { lines, total, open } = quoteLines(q);
+  const isCash = /מזומן/.test(q.payMethod || '');
+  const termsToSign = isCash && TERMS.cashClause ? [...TERMS.sections, { title: 'תשלום במזומן – התחייבות', items: [TERMS.cashClause] }] : TERMS.sections;
   const coupon = findCoupon(q.coupon);
   const discount = coupon && total ? Math.round(total * coupon.percent / 100) : 0;
   const validUntil = new Date(meta.issued + TERMS.quote.validDays * 86400000).toLocaleDateString('he-IL', { timeZone: 'Asia/Jerusalem' });
@@ -133,7 +135,7 @@ export default function Quote() {
     setErr('');
     if (!canSign) { setErr('כדי לחתום: סמנו שקראתם ומסכימים, כתבו שם מלא וחתמו במסגרת.'); return; }
     setBusy(true);
-    const record = { number: meta.number, quote: q, signer: signer.trim(), signature: sig, termsVersion: TERMS.version, terms: TERMS.sections, signedAt: Date.now() };
+    const record = { number: meta.number, quote: q, signer: signer.trim(), signature: sig, termsVersion: TERMS.version, terms: termsToSign, signedAt: Date.now() };
     if (q.demo) { setSigned(record); setBusy(false); return; }
     try {
       const r = await fetch('/api/agreement', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(record) });
@@ -171,7 +173,7 @@ export default function Quote() {
         <article className="glass quote">
           <header className="q-head">
             <div>
-              <h1 className="d">הצעת מחיר</h1>
+              <h1 className="d">{q.payMethod ? 'הזמנה והסכם' : 'הצעת מחיר'}</h1>
               <div className="q-meta">מס׳ {meta.number} · הונפקה {new Date(meta.issued).toLocaleDateString('he-IL', { timeZone: 'Asia/Jerusalem' })} · בתוקף עד {validUntil}</div>
             </div>
             <div className="q-biz">
@@ -192,6 +194,8 @@ export default function Quote() {
               <div><dt>מועד</dt><dd>{fmtDate(q.date)}{q.time ? ` · ${q.time}` : ''}{q.durLabel ? ` · ${q.durLabel}` : ''}</dd></div>
               {q.isReh && <div><dt>הרכב</dt><dd>{q.band} · הקלטת ערוצים מלאה: {q.rec ? 'כן' : 'לא'}</dd></div>}
               {q.notes && <div><dt>הערות</dt><dd>{q.notes}</dd></div>}
+              {q.payMethod && <div><dt>תשלום</dt><dd>{q.payMethod}</dd></div>}
+              {q.payStatus && <div><dt>סטטוס</dt><dd>{q.payStatus}</dd></div>}
             </dl>
           </section>
 
@@ -222,7 +226,7 @@ export default function Quote() {
 
           <section className="q-block">
             <h2>תקנון האולפן וזכויות יוצרים <span className="q-ver">גרסה {termsVersion}</span></h2>
-            {(signed && signed.terms ? signed.terms : TERMS.sections).map((s) => (
+            {(signed && signed.terms ? signed.terms : termsToSign).map((s) => (
               <div key={s.title} className="q-terms">
                 <h3>{s.title}</h3>
                 <ul>{s.items.map((t) => <li key={t}>{t}</li>)}</ul>
