@@ -444,7 +444,7 @@ export function Booking({ st, setSt }) {
                 <button type="button" className="btn btn-main" style={{ width: '100%' }} onClick={openPayment}>המשך לתשלום ולהסכם</button>
                 {flowErr && <p role="alert" style={{ margin: 0, fontSize: 14, color: '#fca5a5', textAlign: 'center' }}>{flowErr}</p>}
                 <p className="note" style={{ margin: 0, textAlign: 'center' }}>אשראי · ביט · PayBox · העברה בנקאית · תשלום קבוצתי · מזומן</p>
-                <p className="note policy-note">{CANCEL_POLICY.short} <a href="/cancellation">מדיניות ביטולים</a> · <a href="/privacy">מדיניות פרטיות</a></p>
+                <p className="note policy-note">{CANCEL_POLICY.short} <a href="/terms">תקנון</a> · <a href="/cancellation">מדיניות ביטולים</a> · <a href="/privacy">מדיניות פרטיות</a></p>
                 <a className="btn btn-glass btn-sm" href={waLink(msg)} target="_blank" rel="noopener" style={{ width: '100%' }}><IconWA size={18} />שאלה ליניר בוואטסאפ</a>
               </>
             ) : paid ? (
@@ -463,7 +463,7 @@ export function Booking({ st, setSt }) {
                 <p className="note" style={{ margin: 0, textAlign: 'center' }}>
                   התאריך משוריין רק אחרי שהתשלום עובר. התשלום מאובטח דרך Morning, והקבלה נשלחת אליך אוטומטית.
                 </p>
-                <p className="note policy-note">{CANCEL_POLICY.short} <a href="/cancellation">מדיניות ביטולים</a> · <a href="/privacy">מדיניות פרטיות</a></p>
+                <p className="note policy-note">{CANCEL_POLICY.short} <a href="/terms">תקנון</a> · <a href="/cancellation">מדיניות ביטולים</a> · <a href="/privacy">מדיניות פרטיות</a></p>
                 <a className="btn btn-glass btn-sm" href={waLink(msg)} target="_blank" rel="noopener" style={{ width: '100%' }}><IconWA size={18} />שאלה ליניר בוואטסאפ</a>
               </>
             ) : (
@@ -500,7 +500,7 @@ export function Booking({ st, setSt }) {
                     </p>
                   </>
                 )}
-                <p className="note policy-note">{CANCEL_POLICY.short} <a href="/cancellation">מדיניות ביטולים</a> · <a href="/privacy">מדיניות פרטיות</a></p>
+                <p className="note policy-note">{CANCEL_POLICY.short} <a href="/terms">תקנון</a> · <a href="/cancellation">מדיניות ביטולים</a> · <a href="/privacy">מדיניות פרטיות</a></p>
               </>
             )}
             {showQuote && !flowOn && (

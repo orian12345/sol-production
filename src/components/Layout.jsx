@@ -104,6 +104,7 @@ export function Footer({ links = [], text }) {
         <div><b style={{ color: 'var(--violet-l)' }}>SOL</b> · {text || <>יניר סול הפקות · אולפן הקלטות וחדר חזרות · {ADDRESS} · <a href={TEL} dir="ltr">{PHONE}</a></>}</div>
         <nav aria-label="קישורים בתחתית">
           {links.map(([href, label]) => <a key={href} href={href}>{label}</a>)}
+          <a href="/terms">תקנון</a>
           <a href="/cancellation">מדיניות ביטולים</a>
           <a href="/accessibility">הצהרת נגישות</a>
           <a href="/privacy">מדיניות פרטיות</a>

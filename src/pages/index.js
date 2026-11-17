@@ -6,5 +6,6 @@ import Cancellation from './Cancellation.jsx';
 import Academy from './Academy.jsx';
 import Pay from './Pay.jsx';
 import Privacy from './Privacy.jsx';
+import Terms from './Terms.jsx';
 
-export const PAGES = { home: Home, barmitzvah: BarMitzvah, accessibility: Accessibility, quote: Quote, cancellation: Cancellation, academy: Academy, pay: Pay, privacy: Privacy };
+export const PAGES = { home: Home, barmitzvah: BarMitzvah, accessibility: Accessibility, quote: Quote, cancellation: Cancellation, academy: Academy, pay: Pay, privacy: Privacy, terms: Terms };

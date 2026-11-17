@@ -19,6 +19,7 @@ export default defineConfig(({ isSsrBuild }) => ({
             academy: r('./academy.html'),
             pay: r('./pay.html'),
             privacy: r('./privacy.html'),
+            terms: r('./terms.html'),
           },
         },
       },
