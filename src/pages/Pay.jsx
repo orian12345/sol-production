@@ -117,6 +117,7 @@ export default function Pay() {
                       {state === 'sending' ? 'שולחים…' : `שילמתי ב${LABEL[method]} ✓`}
                     </button>
                     {err && <p role="alert" className="pm-err">{err}</p>}
+                    <p className="pm-hint" style={{ marginTop: 8 }}>השם והטלפון נשלחים רק ליניר, לצורך אישור התשלום. <a href="/privacy">מדיניות פרטיות</a></p>
                     {state === 'error' && <p role="alert" className="pm-err">לא הצלחנו לשלוח. <a href={waLink(waText)} target="_blank" rel="noopener">עדכנו את יניר בוואטסאפ</a></p>}
                   </>
                 )}

@@ -106,6 +106,7 @@ export function Footer({ links = [], text }) {
           {links.map(([href, label]) => <a key={href} href={href}>{label}</a>)}
           <a href="/cancellation">מדיניות ביטולים</a>
           <a href="/accessibility">הצהרת נגישות</a>
+          <a href="/privacy">מדיניות פרטיות</a>
         </nav>
         <div>© {year} SOL Production · כל הזכויות שמורות</div>
       </div>

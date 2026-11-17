@@ -211,12 +211,12 @@ function TeacherCard({ t, pay, onDemoPaid, onSent, coupon }) {
           {form === 'pay' ? (
             <>
               <button type="submit" className="ac-cta" disabled={busy}>{busy ? 'פותחים את דף התשלום…' : 'למעבר לתשלום מאובטח'}</button>
-              <p className="ac-fine">התשלום מאובטח דרך Morning והקבלה נשלחת אוטומטית. {CANCEL_POLICY.short} <a href="/cancellation">מדיניות ביטולים</a></p>
+              <p className="ac-fine">התשלום מאובטח דרך Morning והקבלה נשלחת אוטומטית. {CANCEL_POLICY.short} <a href="/cancellation">מדיניות ביטולים</a> · <a href="/privacy">מדיניות פרטיות</a></p>
             </>
           ) : (
             <>
               <button type="submit" className="ac-cta" disabled={busy}><IconWA size={20} />{busy ? 'שולחים…' : 'שליחת הבקשה'}</button>
-              <p className="ac-fine">הבקשה נשלחת ישירות ליניר בוואטסאפ — הוא יחזור אליכם בהקדם.</p>
+              <p className="ac-fine">הבקשה נשלחת ישירות ליניר בוואטסאפ — הוא יחזור אליכם בהקדם. <a href="/privacy">מדיניות פרטיות</a></p>
             </>
           )}
         </form>
