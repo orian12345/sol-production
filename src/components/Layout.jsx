@@ -108,7 +108,7 @@ export function Footer({ links = [], text }) {
           <a href="/accessibility">הצהרת נגישות</a>
           <a href="/privacy">מדיניות פרטיות</a>
         </nav>
-        <div>© {year} SOL Production · כל הזכויות שמורות</div>
+        <div>© {year} SOL Production · יניר סול · עוסק פטור 315114611 · כל הזכויות שמורות</div>
       </div>
     </footer>
   );

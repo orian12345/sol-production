@@ -52,6 +52,7 @@ export function Pricing({ selectedIds = [], onPick }) {
           ))}
         </div>
       ))}
+      <p className="note" style={{ textAlign: 'center', marginTop: 16 }}>SOL Production – עוסק פטור. המחירים סופיים, לא נוסף עליהם מע"מ, ועל כל תשלום מונפקת קבלה.</p>
     </section>
   );
 }
