@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Layout, Header, Footer } from '../components/Layout.jsx';
-import { BitPanel, PayboxPanel, ils } from '../components/PayPanels.jsx';
-import { waLink } from '../data.js';
+import { BitPanel, PayboxPanel, CardPanel, ils } from '../components/PayPanels.jsx';
+import { waLink, PAYMENT } from '../data.js';
 
 /* =====================================================================
    דף תשלום למשתתף בתשלום קבוצתי — /pay#d=<פרטים>
@@ -88,7 +88,7 @@ export default function Pay() {
             <h2 className="pay-h">איך תרצו לשלם?</h2>
             <div className="pay-methods" role="radiogroup" aria-label="אמצעי תשלום">
               {METHODS.map((m) => {
-                const off = m.id === 'card' && !card;
+                const off = m.id === 'card' && !card && !PAYMENT.cardUrl;
                 return (
                   <button key={m.id} type="button" role="radio" aria-checked={method === m.id} className="pay-m" disabled={off} onClick={() => { setMethod(m.id); setErr(''); }}>
                     <span className="pm-ico">{m.icon}</span>
@@ -103,9 +103,9 @@ export default function Pay() {
               <div className="pay-panel pm-step">
                 {method === 'bit' && <BitPanel amt={amt} amountLabel="החלק שלך" />}
                 {method === 'paybox' && <PayboxPanel amt={amt} amountLabel="החלק שלך" />}
-                {method === 'card' && <p>תשלום מאובטח באשראי — יופעל בקרוב. בינתיים אפשר לשלם בביט או ב-PayBox.</p>}
+                {method === 'card' && (PAYMENT.cardUrl ? <CardPanel amt={amt} amountLabel="החלק שלך" /> : <p>תשלום מאובטח באשראי — יופעל בקרוב. בינתיים אפשר לשלם בביט או ב-PayBox.</p>)}
 
-                {method !== 'card' && (
+                {(method !== 'card' || PAYMENT.cardUrl) && (
                   <>
                     <h3 className="pay-h">שילמת? עדכנו את יניר</h3>
                     <input type="text" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hp" value={hp} onChange={(e) => setHp(e.target.value)} />

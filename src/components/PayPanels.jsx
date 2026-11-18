@@ -60,6 +60,20 @@ export function BitPanel({ amt, note, amountLabel }) {
   );
 }
 
+export function CardPanel({ amt, note, amountLabel }) {
+  const [copied, copy] = useCopy();
+  return (
+    <>
+      <p>הכפתור פותח את דף התשלום המאובטח של SOL Production באשראי (Hyp). מזינים את הסכום ופרטי הכרטיס, משלמים, וחוזרים לכאן ללחוץ "שילמתי". פרטי הכרטיס לא עוברים דרך האתר.</p>
+      <AmountBox amt={amt} note={note} label={amountLabel || 'סכום לתשלום'} copied={copied} copy={copy} />
+      <a className="btn btn-glass pm-app" href={PAYMENT.cardUrl} target="_blank" rel="noopener" onClick={() => { if (amt) copy('main', String(amt)); }}>
+        {amt ? 'לתשלום באשראי (הסכום יועתק)' : 'לדף התשלום באשראי'}
+      </a>
+      {amt > 0 && <p className="pm-hint">{copied === 'main' ? 'הסכום הועתק ✓ — בדף התשלום מדביקים אותו בשדה הסכום.' : 'הסכום מועתק אוטומטית — בדף התשלום מדביקים אותו בשדה הסכום.'}</p>}
+    </>
+  );
+}
+
 export function PayboxPanel({ amt, note, amountLabel }) {
   const [copied, copy] = useCopy();
   const payee = PAYMENT.payee || 'יניר סול';

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { PAYMENT } from '../data.js';
 import { IconClose, IconWA } from './icons.jsx';
-import { BitPanel, PayboxPanel, copyText } from './PayPanels.jsx';
+import { BitPanel, PayboxPanel, CardPanel, copyText } from './PayPanels.jsx';
 
 /* =====================================================================
    חלון "בחירת אמצעי תשלום" — נפתח אחרי מילוי פרטי ההזמנה.
@@ -63,7 +63,7 @@ ${partUrl(i, n)}`;
   };
 
   const METHODS = [
-    { id: 'card', label: 'כרטיס אשראי', sub: online ? 'תשלום מאובטח' : 'יופעל בקרוב', on: online, icon: ico(<><rect x="2" y="5" width="20" height="14" rx="2" /><path d="M2 10h20M6 15h4" /></>) },
+    { id: 'card', label: 'כרטיס אשראי', sub: online || PAYMENT.cardUrl ? 'תשלום מאובטח' : 'יופעל בקרוב', on: online || !!PAYMENT.cardUrl, icon: ico(<><rect x="2" y="5" width="20" height="14" rx="2" /><path d="M2 10h20M6 15h4" /></>) },
     { id: 'bit', label: 'ביט', sub: online ? 'תשלום מאובטח' : 'העברה באפליקציה', on: true, icon: ico(<><rect x="6" y="2" width="12" height="20" rx="3" /><path d="M10 18h4" /></>) },
     { id: 'paybox', label: 'PayBox', sub: 'העברה באפליקציה', on: true, icon: ico(<><rect x="3" y="6" width="18" height="13" rx="2" /><path d="M3 10h18M8 3h8" /></>) },
     { id: 'bank', label: 'העברה בנקאית', sub: 'לחשבון העסק', on: true, icon: ico(<><path d="M3 10l9-6 9 6M5 10v8M19 10v8M9 10v8M15 10v8M3 20h18" /></>) },
@@ -98,13 +98,21 @@ ${partUrl(i, n)}`;
           <div className="pm-step">
             <button type="button" className="pm-backlink" onClick={() => { setMethod(''); setErr(''); setLinks(null); }}>→ חזרה לאמצעי התשלום</button>
 
-            {(method === 'card' || (method === 'bit' && online)) && (
+            {((method === 'card' && online) || (method === 'bit' && online)) && (
               <>
                 <h4>{method === 'card' ? 'תשלום בכרטיס אשראי' : 'תשלום בביט'}</h4>
                 <p>נעבור לדף תשלום מאובטח של Morning{deposit > 0 ? <> לתשלום מקדמה של <b>{ils(deposit)}</b></> : null}. הקבלה תישלח אליך אוטומטית, ואחרי התשלום נחזור לכאן לחתימה על ההסכם.</p>
                 <button type="button" className="btn btn-main" disabled={busy} onClick={() => run(() => onOnline(method === 'card' ? 100 : 120, method === 'card' ? 'כרטיס אשראי' : 'ביט'))}>
                   {busy ? 'פותחים את דף התשלום…' : 'למעבר לתשלום מאובטח'}
                 </button>
+              </>
+            )}
+
+            {method === 'card' && !online && (
+              <>
+                <h4>תשלום בכרטיס אשראי</h4>
+                <CardPanel amt={amt} note={amtNote} />
+                <button type="button" className="btn btn-main" disabled={busy} onClick={() => run(() => onOffline('card', 'כרטיס אשראי', 'שולם באשראי (Hyp) – ממתין לאישור יניר'))}>שילמתי באשראי – להמשך</button>
               </>
             )}
 

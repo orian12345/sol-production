@@ -27,6 +27,8 @@ export const discountText = (price, percent) => {
 export const PAYMENT = {
   bank: { bankName: 'בנק לאומי (10)', branch: '676', account: '647032', holder: 'יניר סול' }, // בנק, סניף, מספר חשבון, שם בעל החשבון
   payboxUrl: 'https://links.payboxapp.com/XNeXUaSS57b', // קישור לקבוצת PayBox של יניר — פותח את PayBox ישר על הקבוצה. ריק = העברה למספר הטלפון
+  // דף תשלום באשראי של Hyp — הלקוח מזין סכום ופרטי כרטיס בדף המאובטח
+  cardUrl: 'https://pay.hyp.co.il/p3/?Masof=5604193028&action=QrSimple&signature=996f711a6d985c31ba92805a8a28b7678a50ab80b5dbe4eac7a18801e1027f6e',
   bitPhone: '050-303-9743',    // המספר שאליו מעבירים בביט
   bitName: 'אוריאן נדה',       // השם שמופיע בביט
   bitQr: '/pay/bit-qr.png',     // קוד ה-QR של ביט (בתיקיית public/pay)
