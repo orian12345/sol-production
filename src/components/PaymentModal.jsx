@@ -21,6 +21,23 @@ export function PaymentModal({ open, onClose, deposit, online, groupOnline, demo
   const [err, setErr] = useState('');
   const [people, setPeople] = useState(3);
   const [links, setLinks] = useState(null); // { urls, partAmount }
+  // "שילמתי" → ממתינים שיניר יאשר שהתשלום התקבל: { wait: claimId | 'demo', go? }
+  const [waiting, setWaiting] = useState(null);
+  useEffect(() => {
+    if (!waiting) return;
+    if (waiting.wait === 'demo') { const tm = setTimeout(() => waiting.go && waiting.go(), 4000); return () => clearTimeout(tm); }
+    let live = true;
+    const check = async () => {
+      try {
+        const r = await fetch('/api/pay-status?id=' + waiting.wait);
+        const j = await r.json().catch(() => ({}));
+        if (live && j.status === 'approved') { window.location.href = '/quote?p=' + waiting.wait; return; }
+      } catch { /* ננסה שוב */ }
+      if (live) tm = setTimeout(check, 8000);
+    };
+    let tm = setTimeout(check, 5000);
+    return () => { live = false; clearTimeout(tm); };
+  }, [waiting]);
   const [copied, setCopied] = useState(''); // מה הועתק אחרון
   const copy = async (key, text) => { if (await copyText(text)) { setCopied(key); setTimeout(() => setCopied((c) => (c === key ? '' : c)), 2500); } };
   const digits = (t) => String(t || '').replace(/\D/g, '');
@@ -33,7 +50,7 @@ export function PaymentModal({ open, onClose, deposit, online, groupOnline, demo
   const boxRef = useRef(null);
 
   useEffect(() => {
-    if (!open) { setMethod(''); setErr(''); setLinks(null); setBusy(false); return; }
+    if (!open) { setMethod(''); setErr(''); setLinks(null); setBusy(false); setWaiting(null); return; }
     const onKey = (e) => { if (e.key === 'Escape') onClose(); };
     document.addEventListener('keydown', onKey);
     const t = setTimeout(() => boxRef.current?.focus(), 30);
@@ -57,7 +74,7 @@ export function PaymentModal({ open, onClose, deposit, online, groupOnline, demo
 ${partUrl(i, n)}`;
   const run = async (fn) => {
     setErr(''); setBusy(true);
-    try { const r = await fn(); if (typeof r === 'string') setErr(r); else if (r && r.urls) setLinks(r); }
+    try { const r = await fn(); if (typeof r === 'string') setErr(r); else if (r && r.wait) setWaiting(r); else if (r && r.urls) setLinks(r); }
     catch { setErr('משהו השתבש. נסו שוב או שלחו הודעה ליניר בוואטסאפ.'); }
     setBusy(false);
   };
@@ -80,10 +97,19 @@ ${partUrl(i, n)}`;
           <button type="button" className="icon-btn" aria-label="סגירה" onClick={onClose}><IconClose /></button>
         </div>
         {demo && <p className="pm-demo">מצב הדגמה — אין תשלום אמיתי.</p>}
-        {deposit > 0 && online && <p className="pm-sub">לשריון התאריך באשראי / ביט משלמים מקדמה של <b>{ils(deposit)}</b>. אחרי התשלום חותמים על ההסכם ותנאי הביטול.</p>}
-        {!(deposit > 0 && online) && <p className="pm-sub">בוחרים אמצעי תשלום, ואחר כך חותמים על ההסכם ותנאי הביטול.</p>}
+        {!waiting && deposit > 0 && online && <p className="pm-sub">לשריון התאריך באשראי / ביט משלמים מקדמה של <b>{ils(deposit)}</b>. אחרי התשלום חותמים על ההסכם ותנאי הביטול.</p>}
+        {!waiting && !(deposit > 0 && online) && <p className="pm-sub">בוחרים אמצעי תשלום, ואחר כך חותמים על ההסכם ותנאי הביטול.</p>}
 
-        {!method && (
+        {waiting && (
+          <div className="pm-step pm-waiting" role="status" aria-live="polite">
+            <span className="pm-spin" aria-hidden="true" />
+            <h4>ממתינים לאישור התשלום</h4>
+            <p>יניר קיבל הודעה ויאשר ברגע שיראה שהתשלום נכנס. אפשר להשאיר את הדף פתוח — כשהתשלום יאושר נמשיך אוטומטית לחתימה על ההסכם.</p>
+            <p className="pm-hint">סגרתם את הדף? לא נורא — אחרי האישור יניר ישלח לכם בוואטסאפ קישור להסכם.</p>
+          </div>
+        )}
+
+        {!waiting && !method && (
           <div className="pm-grid">
             {METHODS.map((m) => (
               <button key={m.id} type="button" className="pm-opt" disabled={!m.on} onClick={() => { setErr(''); setMethod(m.id); }}>
@@ -94,7 +120,7 @@ ${partUrl(i, n)}`;
           </div>
         )}
 
-        {method && (
+        {!waiting && method && (
           <div className="pm-step">
             <button type="button" className="pm-backlink" onClick={() => { setMethod(''); setErr(''); setLinks(null); }}>→ חזרה לאמצעי התשלום</button>
 

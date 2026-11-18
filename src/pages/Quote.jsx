@@ -61,6 +61,18 @@ export default function Quote() {
   const [meta, setMeta] = useState({ number: '', issued: 0 });
 
   useEffect(() => {
+    const pid = new URLSearchParams(window.location.search).get('p');
+    if (pid) {
+      fetch('/api/pay-status?id=' + encodeURIComponent(pid)).then((r) => (r.ok ? r.json() : null)).then((j) => {
+        if (!j) { setState('missing'); return; }
+        if (j.status !== 'approved' || !j.quote) { setState('waiting'); return; }
+        setQ(j.quote); setSigner(j.quote.name || '');
+        const now = Date.now(); const d = new Date(now);
+        setMeta({ number: `SOL-${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}-${Math.floor(1000 + Math.random() * 9000)}`, issued: now });
+        setState('ready');
+      }).catch(() => setState('missing'));
+      return;
+    }
     const a = new URLSearchParams(window.location.search).get('a');
     if (a) {
       fetch('/api/agreement/' + encodeURIComponent(a)).then((r) => (r.ok ? r.json() : null)).then((j) => {
@@ -87,7 +99,7 @@ export default function Quote() {
         <main className="wrap quote-page">
           <div className="quote-top no-print"><Brand href="/" /></div>
           <div className="glass quote">
-            <p style={{ margin: 0 }}>{state === 'loading' ? 'טוען…' : 'לא נמצאה הצעת מחיר. חזרו לטופס ההזמנה באתר ובחרו "הצעת מחיר ואישור תנאים".'}</p>
+            <p style={{ margin: 0 }}>{state === 'loading' ? 'טוען…' : state === 'waiting' ? 'התשלום עדיין ממתין לאישור של יניר. אחרי שיאשר שהתשלום התקבל, אפשר יהיה לחתום על ההסכם מהקישור הזה.' : 'לא נמצאה הצעת מחיר. חזרו לטופס ההזמנה באתר.'}</p>
             {state === 'missing' && <a className="btn btn-main btn-sm" href="/#booking">לטופס ההזמנה</a>}
           </div>
         </main>

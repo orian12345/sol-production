@@ -113,6 +113,25 @@ function TeacherCard({ t, pay, onDemoPaid, onSent, coupon }) {
   };
   // ביט / PayBox / העברה / קבוצתי / מזומן — הודעה ליניר ואז להסכם
   const payOffline = async (id, label, status) => {
+    const lines = [
+      `כלי: ${t.instrument}`, `מורה: ${t.teacher}`,
+      `חבילה: ${tierName} – ${priceStr}`,
+      `מועד: ${when}`,
+      c.email.trim() && `מייל: ${c.email.trim()}`,
+      `אמצעי תשלום: ${label}`, `סטטוס: ${status}`,
+    ].filter(Boolean);
+    // כל אמצעי חוץ ממזומן — ממשיכים להסכם רק אחרי שיניר מאשר שהתשלום התקבל
+    if (id !== 'cash') {
+      if (pay.demo) return { wait: 'demo', go: () => goAgreement(label, 'שולם ✓ – התשלום אושר (הדגמה)') };
+      try {
+        const r = await fetch('/api/pay-claim', { method: 'POST', headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ kind: 'academy', name: c.name.trim(), phone: c.phone, method: label, lines, quote: quoteData({ payMethod: label, payStatus: status }), website: hp }) });
+        const j = await r.json().catch(() => ({}));
+        if (r.ok && j.id) return { wait: j.id };
+        if (j.error === 'missing_contact') return ERRORS.missing_contact;
+      } catch { /* below */ }
+      return 'לא הצלחנו לעדכן את יניר. נסו שוב בעוד רגע, או כתבו לו בוואטסאפ ששילמתם.';
+    }
     if (!pay.demo && pay.notify) {
       const lines = [
         `כלי: ${t.instrument}`, `מורה: ${t.teacher}`,

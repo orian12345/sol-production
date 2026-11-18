@@ -46,6 +46,9 @@ export default {
       if (url.pathname === '/api/academy-notify' && request.method === 'POST') return await academyNotify(request, url, env);
       if (url.pathname === '/api/agreement' && request.method === 'POST') return await saveAgreement(request, env);
       if (url.pathname.startsWith('/api/agreement/') && request.method === 'GET') return await getAgreement(url, env);
+      if (url.pathname === '/api/pay-claim' && request.method === 'POST') return await payClaim(request, url, env);
+      if (url.pathname === '/api/pay-status' && request.method === 'GET') return await payStatus(url, env);
+      if (url.pathname === '/api/pay-approve') return await payApprove(request, url, env);
       if (url.pathname.startsWith('/api/')) return json({ error: 'not_found' }, 404);
     } catch (e) {
       console.error('api error', url.pathname, e && e.stack || e);
@@ -465,7 +468,10 @@ async function notifyOwner(env, text) {
   if (env.RESEND_API_KEY && env.OWNER_EMAIL) {
     const subject = text.split('\n')[0].slice(0, 120);
     const html = '<div dir="rtl" style="font-family:Arial,sans-serif;font-size:15px;line-height:1.7">'
-      + text.split('\n').map((l) => l.replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]))).join('<br>') + '</div>';
+      + text.split('\n').map((l) => l.replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]))
+        .replace(/(https?:\/\/[^\s<]+)/g, (u) => (u.includes('/api/pay-approve')
+          ? `<a href="${u}" style="display:inline-block;background:#1f63e6;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:bold">לבדיקה ואישור התשלום</a>`
+          : `<a href="${u}">${u}</a>`))).join('<br>') + '</div>';
     jobs.push(fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { authorization: 'Bearer ' + env.RESEND_API_KEY, 'content-type': 'application/json' },
@@ -552,4 +558,73 @@ function b64url(bytes) {
   let s = '';
   for (const b of bytes) s += String.fromCharCode(b);
   return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+
+/* ---------- אישור תשלום ידני (ביט / PayBox / העברה / אשראי בקישור / קבוצתי) ----------
+   הלקוח לוחץ "שילמתי" → נשמרת בקשה (claim) ויניר מקבל מייל עם קישור לאישור.
+   רק אחרי שיניר מאשר (בדף האישור, בלחיצה על כפתור) הלקוח ממשיך להסכם.
+   הקישור במייל פותח דף עם כפתור — כדי שסורקי קישורים במייל לא "יאשרו" לבד. */
+const rid = (n = 16) => [...crypto.getRandomValues(new Uint8Array(n))].map((b) => b.toString(16).padStart(2, '0')).join('');
+const esc = (v) => String(v ?? '').replace(/[<>&"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]));
+const siteOf = (url, env) => String(env.SITE_URL || url.origin).replace(/\/$/, '');
+
+async function payClaim(request, url, env) {
+  if (!env.BOOKINGS || !notifyOn(env)) return json({ error: 'not_configured' }, 503);
+  const b = await request.json().catch(() => ({}));
+  if (b.website) return json({ ok: true, id: 'x' });
+  const clip = (v, n) => String(v ?? '').trim().slice(0, n);
+  const name = clip(b.name, 80), phone = clip(b.phone, 20).replace(/[^\d+\-\s]/g, '');
+  if (!name || phone.replace(/\D/g, '').length < 9) return json({ error: 'missing_contact' }, 400);
+  const ip = request.headers.get('cf-connecting-ip') || 'x';
+  const rk = 'rl:' + ip + ':' + Math.floor(Date.now() / 3600000);
+  const n = Number((await env.BOOKINGS.get(rk)) || 0);
+  if (n >= 8) return json({ error: 'too_many' }, 429);
+  await env.BOOKINGS.put(rk, String(n + 1), { expirationTtl: 3700 });
+
+  const id = rid(), token = rid();
+  const lines = Array.isArray(b.lines) ? b.lines.slice(0, 25).map((l) => clip(l, 300)).filter(Boolean) : [];
+  const quote = b.quote && typeof b.quote === 'object' ? b.quote : null;
+  const rec = { id, token, status: 'pending', created: Date.now(), name, phone, method: clip(b.method, 60), kind: clip(b.kind, 20), lines, quote };
+  if (JSON.stringify(rec).length > 60000) return json({ error: 'too_big' }, 400);
+  await env.BOOKINGS.put('claim:' + id, JSON.stringify(rec), { expirationTtl: 60 * 60 * 24 * 30 });
+  const site = siteOf(url, env);
+  const title = b.kind === 'academy' ? '🎸 SOL Academy – לקוח עדכן ששילם (לבדוק ולאשר)' : '💰 SOL Production – לקוח עדכן ששילם (לבדוק ולאשר)';
+  const sent = await notifyOwner(env, [title, ' ', ...lines, `שם: ${name}`, `טלפון: ${phone}`, ' ',
+    'אחרי שבדקת שהכסף נכנס — לאישור (הלקוח ימשיך להסכם):', `${site}/api/pay-approve?id=${id}&t=${token}`].join('\n'));
+  return sent ? json({ ok: true, id }) : json({ error: 'send_failed' }, 502);
+}
+
+async function payStatus(url, env) {
+  const id = String(url.searchParams.get('id') || '');
+  if (!env.BOOKINGS || !/^[0-9a-f]{32}$/.test(id)) return json({ error: 'not_found' }, 404);
+  const raw = await env.BOOKINGS.get('claim:' + id);
+  if (!raw) return json({ error: 'not_found' }, 404);
+  const rec = JSON.parse(raw);
+  return json(rec.status === 'approved' ? { status: 'approved', quote: rec.quote } : { status: rec.status });
+}
+
+async function payApprove(request, url, env) {
+  const page = (body) => new Response('<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>אישור תשלום | SOL Production</title>'
+    + '<style>body{margin:0;background:#0c1024;color:#f3f5ff;font:16px/1.7 Arial,sans-serif;display:flex;justify-content:center;padding:24px}main{max-width:520px;width:100%;background:#151b3a;border:1px solid #2b356b;border-radius:18px;padding:22px}h1{font-size:22px;margin:0 0 10px}ul{padding-inline-start:20px}button,a.b{display:block;width:100%;box-sizing:border-box;margin-top:14px;padding:14px;border:0;border-radius:12px;font:bold 17px Arial;color:#fff;background:linear-gradient(90deg,#1f63e6,#6a4dff,#9333ea);text-align:center;text-decoration:none;cursor:pointer}a.w{background:#25d366;color:#0b2a17}.m{color:#aab3d9;font-size:14px}</style></head><body><main>'
+    + body + '</main></body></html>', { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } });
+  const id = String(url.searchParams.get('id') || ''), t = String(url.searchParams.get('t') || '');
+  const raw = env.BOOKINGS && /^[0-9a-f]{32}$/.test(id) ? await env.BOOKINGS.get('claim:' + id) : null;
+  const rec = raw ? JSON.parse(raw) : null;
+  if (!rec || !t || t !== rec.token) return page('<h1>הקישור לא תקין</h1><p class="m">ייתכן שפג תוקפו (30 יום).</p>');
+  const site = siteOf(url, env);
+  const details = '<ul>' + rec.lines.map((l) => `<li>${esc(l)}</li>`).join('') + `<li>שם: ${esc(rec.name)}</li><li>טלפון: <span dir="ltr">${esc(rec.phone)}</span></li></ul>`;
+  const agreementUrl = `${site}/quote?p=${rec.id}`;
+  const wa = 'https://wa.me/' + String(rec.phone).replace(/\D/g, '').replace(/^0/, '972') + '?text=' + encodeURIComponent(`היי ${rec.name}, התשלום התקבל ✓ תודה! כאן חותמים על ההסכם ותנאי הביטול: ${agreementUrl}`);
+  if (request.method === 'POST' && rec.status !== 'approved') {
+    rec.status = 'approved'; rec.approvedAt = Date.now();
+    if (rec.quote) rec.quote.payStatus = 'שולם ✓ – התשלום אושר';
+    await env.BOOKINGS.put('claim:' + id, JSON.stringify(rec), { expirationTtl: 60 * 60 * 24 * 30 });
+  }
+  if (rec.status === 'approved') {
+    return page('<h1>התשלום אושר ✓</h1>' + details + '<p class="m">אם הלקוח עדיין בדף — הוא ממשיך עכשיו להסכם לבד. אם סגר אותו, שלח לו את הקישור:</p>'
+      + `<a class="b w" href="${esc(wa)}">שליחת קישור להסכם בוואטסאפ</a>`);
+  }
+  return page('<h1>אישור תשלום</h1>' + details + `<p class="m">אמצעי תשלום: ${esc(rec.method)}. מאשרים רק אחרי שבדקת שהכסף נכנס.</p>`
+    + `<form method="post" action="/api/pay-approve?id=${esc(id)}&amp;t=${esc(t)}"><button type="submit">אישור – התשלום התקבל</button></form>`);
 }

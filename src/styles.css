@@ -776,3 +776,8 @@ footer{background:#090c1e;border-top-color:var(--line-soft)}
 .terms-table{max-width:560px}
 .terms-table th{text-align:start;font-weight:700;white-space:nowrap;width:40%}
 .terms-table td[dir="ltr"]{text-align:right}
+/* payment modal: waiting for Yanir's approval */
+.pm-waiting{align-items:center;text-align:center}
+.pm-spin{width:44px;height:44px;border-radius:50%;border:4px solid rgba(120,140,255,.25);border-top-color:#6a4dff;animation:pmspin 1s linear infinite;margin:6px auto 4px}
+@keyframes pmspin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.pm-spin{animation:none}}

@@ -212,6 +212,23 @@ export function Booking({ st, setSt }) {
   };
   // העברה / PayBox / מזומן / קבוצתי — שולחים ליניר את הפרטים ואז להסכם
   const payOffline = async (id, label, status) => {
+    // ביט / PayBox / העברה / אשראי בקישור / קבוצתי — ממשיכים להסכם רק אחרי שיניר מאשר שהתשלום התקבל
+    if (id !== 'cash') {
+      if (demo) return { wait: 'demo', go: () => goAgreement(label, 'שולם ✓ – התשלום אושר (הדגמה)') };
+      const lines = [(services.length > 1 ? 'שירותים: ' : 'שירות: ') + svcLabel];
+      selected.forEach((x) => lines.push(`מהמחירון: ${x.name} (${priceLine(x)})`));
+      if (coupon) lines.push(couponLine);
+      lines.push('תאריך: ' + dateLabel + (showHours ? ` · ${time || "—"} · ${durLabel}` : ''), `אמצעי תשלום: ${label}`, `סטטוס: ${status}`);
+      if (notes) lines.push('הערות: ' + notes);
+      try {
+        const r = await fetch('/api/pay-claim', { method: 'POST', headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ kind: 'studio', name, phone: st.phone, method: label, lines, quote: quoteData({ payMethod: label, payStatus: status }) }) });
+        const j = await r.json().catch(() => ({}));
+        if (r.ok && j.id) return { wait: j.id };
+        if (j.error === 'missing_contact') return ERRORS.missing_contact;
+      } catch { /* below */ }
+      return 'לא הצלחנו לעדכן את יניר. נסו שוב בעוד רגע, או כתבו לו בוואטסאפ ששילמתם.';
+    }
     if (!demo && cfg.notify) {
       const reqLines = [(services.length > 1 ? 'שירותים: ' : 'שירות: ') + svcLabel];
       selected.forEach((x) => reqLines.push(`מהמחירון: ${x.name} (${priceLine(x)})`));
