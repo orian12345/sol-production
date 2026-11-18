@@ -250,20 +250,6 @@ function TeacherCard({ t, pay, onDemoPaid, onSent, coupon }) {
         </form>
       )}
 
-      {pay.notify ? (
-        form !== 'req' && (
-          <button type="button" className={pay.on ? 'ac-cta ac-cta-2' : 'ac-cta'} onClick={() => { setErr(''); setForm('req'); }}>
-            <IconWA size={20} />{academyText.cta}
-          </button>
-        )
-      ) : (
-        <a className={pay.on ? 'ac-cta ac-cta-2' : 'ac-cta'} href={waLink(msg)} target="_blank" rel="noopener">
-          <IconWA size={20} />{academyText.cta}
-        </a>
-      )}
-      {pay.notify && err && form === 'req' && err.includes('בוואטסאפ למטה') && (
-        <a className="ac-cta ac-cta-2" href={waLink(msg)} target="_blank" rel="noopener"><IconWA size={20} />שליחה ישירה בוואטסאפ</a>
-      )}
       <PaymentModal open={pmOpen} onClose={() => setPmOpen(false)} deposit={pay.on ? deposit : 0} online={pay.on || pay.demo} groupOnline={false} demo={pay.demo}
         due={{ amount: finalPrice, fixed: true }} summary={{ svc: svcLabel, date: date ? fmtDate(date) : '', time, by: c.name.trim() }}
         onOnline={payOnline} onGroup={() => null} onOffline={payOffline} />
