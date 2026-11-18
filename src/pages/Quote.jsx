@@ -209,6 +209,7 @@ export default function Quote() {
                 <ul>{s.items.map((t) => <li key={t}>{t}</li>)}</ul>
               </div>
             ))}
+            <p className="q-note">ההזמנה כפופה גם ל<a href="/terms">תקנון האתר המלא</a>, כולל תנאי הביטול שבסעיף 6.</p>
           </section>
 
           <section className="q-block">
