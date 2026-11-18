@@ -767,3 +767,12 @@ footer{background:#090c1e;border-top-color:var(--line-soft)}
 .pay-m:disabled{opacity:.5;cursor:not-allowed}
 .pay-panel{margin-top:16px}
 .pay-panel .field{width:100%;margin-bottom:8px}
+/* ---------- /terms ---------- */
+.terms-updated{color:var(--muted);margin-top:-6px}
+.terms-list{padding-inline-start:22px}
+.terms-list > li{margin-bottom:8px}
+.terms-sub{list-style:circle;padding-inline-start:20px;margin-top:6px}
+.terms-sub li{margin-bottom:4px}
+.terms-table{max-width:560px}
+.terms-table th{text-align:start;font-weight:700;white-space:nowrap;width:40%}
+.terms-table td[dir="ltr"]{text-align:right}

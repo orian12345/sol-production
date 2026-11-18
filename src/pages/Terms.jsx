@@ -1,52 +1,41 @@
 import { Layout, Header, Footer } from '../components/Layout.jsx';
-import { TEL, PHONE, WA_HELLO } from '../data.js';
-import { TERMS } from '../terms.js';
+import { SITE_TERMS } from '../siteTerms.js';
 
 /* =====================================================================
-   תקנון — /terms
-   תקנון האולפן מוצג מאותו מקור כמו ההסכם שהלקוח חותם עליו (src/terms.js),
-   כך שכל שינוי שם מתעדכן גם כאן. בנוסף — כללי שימוש באתר והזמנה דרכו.
+   תקנון האתר — /terms   (הנוסח עצמו: src/siteTerms.js)
    ===================================================================== */
+const Item = ({ it }) => {
+  if (typeof it === 'string') return <li>{it}</li>;
+  return (
+    <li>
+      {it.t}{it.link && <a href={it.link[0]}>{it.link[1]}</a>}{it.after || ''}
+      {it.sub && <ul className="terms-sub">{it.sub.map((s) => <li key={s}>{s}</li>)}</ul>}
+    </li>
+  );
+};
+
 export default function Terms() {
-  const b = TERMS.business;
   return (
     <Layout>
       <Header cta={{ href: '/#booking', label: 'הזמנת סשן', glass: true }} />
-      <main className="wrap legal">
-        <h1 className="d">תקנון</h1>
-        <p>{b.name} · {b.address}{b.taxId ? ` · עוסק פטור ${b.taxId}` : ''} · טלפון: <a href={TEL} dir="ltr">{PHONE}</a></p>
-        <p>הזמנת שירות באתר או באולפן מהווה הסכמה לתנאים שלהלן. אותו נוסח מופיע בהסכם שנחתם בעת ההזמנה.</p>
+      <main className="wrap legal terms-page">
+        <h1 className="d">תקנון האתר – SOL Production</h1>
+        <p className="terms-updated">עודכן לאחרונה: {SITE_TERMS.updated}</p>
 
-        {TERMS.sections.map((sec) => (
+        {SITE_TERMS.sections.map((sec, n) => (
           <section key={sec.title}>
-            <h2>{sec.title}</h2>
-            <ul>
-              {sec.items.filter((i) => !i.trim().startsWith('[להשלים')).map((i) => <li key={i}>{i}</li>)}
-            </ul>
+            <h2>{n + 1}. {sec.title}</h2>
+            {sec.table ? (
+              <table className="q-table terms-table">
+                <tbody>{sec.table.map(([k, v]) => <tr key={k}><th scope="row">{k}</th><td dir={/^[\d\-–:]+$/.test(v) ? 'ltr' : undefined}>{v}</td></tr>)}</tbody>
+              </table>
+            ) : (
+              <ol className="terms-list">
+                {sec.items.map((it, i) => <Item key={i} it={it} />)}
+              </ol>
+            )}
           </section>
         ))}
-
-        <h2>תשלום במזומן</h2>
-        <ul><li>{TERMS.cashClause}</li></ul>
-
-        <h2>מחירים</h2>
-        <ul>
-          <li>המחירים באתר סופיים. {TERMS.quote.vatNote}</li>
-          <li>שירותים שמחירם "לפי הצעת מחיר אישית" או טווח מחירים — המחיר הסופי נקבע מול יניר סול לפני תחילת העבודה.</li>
-          <li>קוד קופון חל על החבילות שנבחרו מהמחירון, אחד לכל הזמנה, ואינו חל על שיעור היכרות באקדמיה.</li>
-        </ul>
-
-        <h2>שימוש באתר</h2>
-        <ul>
-          <li>התכנים באתר — טקסטים, תמונות, סרטונים ומוזיקה — שייכים ל-SOL Production או לבעלי הזכויות בהם, ואין להעתיק או לפרסם אותם בלי אישור.</li>
-          <li>אנחנו משתדלים שהמידע באתר יהיה מדויק ומעודכן. במקרה של טעות במחיר או בפרט אחר, יניר סול יעדכן את הלקוח לפני ביצוע ההזמנה.</li>
-          <li>הפרטים שנמסרים באתר נשמרים ומשמשים לפי <a href="/privacy">מדיניות הפרטיות</a>. ביטולים — לפי <a href="/cancellation">מדיניות הביטולים</a>.</li>
-        </ul>
-
-        <h2>שאלות</h2>
-        <p>בכל שאלה על התקנון אפשר לפנות ליניר סול בטלפון <a href={TEL} dir="ltr">{PHONE}</a> או <a href={WA_HELLO} target="_blank" rel="noopener">בוואטסאפ</a>.</p>
-
-        <p style={{ marginTop: 32 }}>גרסת תקנון: {TERMS.version}.</p>
       </main>
       <Footer links={[['/', 'ראשי'], ['/#pricing', 'מחירון']]} />
     </Layout>
