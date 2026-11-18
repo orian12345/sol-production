@@ -6,10 +6,14 @@ import { TEL, PHONE, WA_HELLO } from '../data.js';
    תואם לסעיף 6 בתקנון (src/siteTerms.js), ולסעיפים 7–8 לבר/בת מצווה ולשיעורים.
    שינוי כאן → לעדכן גם שם (ולהפך).
    ===================================================================== */
+// דוגמאות רק לשירותים לפי שעה (בר/בת מצווה והפקה — לפי סעיף 7, לא לפי הטבלה)
+const UPDATED = '18/11/2026';
 const EXAMPLES = [
+  ['חדר חזרות לשעה', 120],
   ['חדר חזרות ל-2 שעות', 240],
+  ['הקלטת ברכה / דרשה לאירוע', 500],
   ['הקלטת קאבר על פלייבק', 650],
-  ['שיר בר / בת מצווה', 2950],
+  ['חדר חזרות + סאונדמן ל-4 שעות', 800],
 ];
 const fee = (n) => Math.max(Math.round(n * 0.1), 50);
 const ils = (n) => '₪' + n.toLocaleString('en-US');
@@ -20,6 +24,7 @@ export default function Cancellation() {
       <Header cta={{ href: '/', label: 'חזרה לדף הבית', glass: true }} />
       <main className="wrap legal">
         <h1 className="d">מדיניות ביטולים</h1>
+        <p className="terms-updated">עודכן לאחרונה: {UPDATED}</p>
         <p>שריון מועד באולפן שומר עבורכם את השעה ומונע מלקוחות אחרים להזמין אותה, לכן ביטול ברגע האחרון כרוך בדמי ביטול. המדיניות כאן תואמת לסעיף 6 ב<a href="/terms">תקנון האתר</a>.</p>
 
         <h2>שירותים לפי שעה</h2>
@@ -29,15 +34,16 @@ export default function Cancellation() {
           <li><strong>ביטול פחות מ-24 שעות לפני המועד, או אי-הגעה</strong> – דמי ביטול של <strong>10% מסכום ההזמנה או 50 ₪, הגבוה מביניהם</strong>.</li>
         </ul>
 
-        <h3>דוגמאות לביטול פחות מ-24 שעות לפני</h3>
+        <h3>דוגמאות – ביטול פחות מ-24 שעות לפני (שירותים לפי שעה)</h3>
         <table className="q-table" style={{ maxWidth: 560 }}>
-          <thead><tr><th>הזמנה</th><th>סכום</th><th>דמי ביטול</th></tr></thead>
+          <thead><tr><th>הזמנה</th><th>סכום</th><th>10% מהסכום</th><th>דמי ביטול</th></tr></thead>
           <tbody>
             {EXAMPLES.map(([name, amount]) => (
-              <tr key={name}><td>{name}</td><td>{ils(amount)}</td><td>{ils(fee(amount))}</td></tr>
+              <tr key={name}><td>{name}</td><td>{ils(amount)}</td><td>{ils(Math.round(amount * 0.1))}</td><td><strong>{ils(fee(amount))}</strong></td></tr>
             ))}
           </tbody>
         </table>
+        <p className="note">דמי הביטול הם הגבוה מבין 10% מהסכום ל-₪50. ביטול יותר מ-24 שעות לפני המועד – ללא חיוב. בשיר בר/בת מצווה ובשירותי הפקה הטבלה לא חלה – ראו בהמשך.</p>
 
         <h2>שיר בר / בת מצווה ושירותי הפקה</h2>
         <ul>
