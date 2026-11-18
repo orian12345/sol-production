@@ -12,6 +12,7 @@ export default function Privacy() {
       <Header cta={{ href: '/', label: 'חזרה לדף הבית', glass: true }} />
       <main className="wrap legal">
         <h1 className="d">מדיניות פרטיות</h1>
+        <p className="terms-updated">עודכן לאחרונה: 17/11/2026</p>
         <p>אנחנו ב-SOL Production מכבדים את הפרטיות שלכם. כאן מוסבר איזה מידע נאסף באתר, למה, איפה הוא נשמר ומה הזכויות שלכם.</p>
 
         <h2>מי אחראי על המידע</h2>
@@ -59,7 +60,7 @@ export default function Privacy() {
         <h2>הזכויות שלכם</h2>
         <p>אפשר לבקש לעיין במידע שנשמר עליכם, לתקן אותו או למחוק אותו — בטלפון <a href={TEL} dir="ltr">{PHONE}</a> או <a href={WA_HELLO} target="_blank" rel="noopener">בוואטסאפ</a>. נטפל בבקשה בהקדם, בכפוף לחובות שמירת מסמכים על פי דין.</p>
 
-        <p style={{ marginTop: 32 }}>תאריך עדכון: נובמבר 2026. אם המדיניות תשתנה, הנוסח המעודכן יופיע בדף זה.</p>
+        <p style={{ marginTop: 32 }}>אם המדיניות תשתנה, הנוסח המעודכן יופיע בדף זה, ותאריך העדכון בראש הדף.</p>
       </main>
       <Footer links={[['/', 'ראשי'], ['/#pricing', 'מחירון']]} />
     </Layout>

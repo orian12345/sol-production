@@ -7,6 +7,7 @@ export default function Accessibility() {
       <Header cta={{ href: '/', label: 'חזרה לדף הבית', glass: true }} />
       <main className="wrap legal">
         <h1 className="d">הצהרת נגישות</h1>
+        <p className="terms-updated">עודכן לאחרונה: 17/11/2026</p>
         <p>אנו ב־SOL Production רואים חשיבות בהנגשת האתר לאנשים עם מוגבלויות, ופועלים כדי שכל הגולשים יוכלו להשתמש בו בנוחות, בהתאם לתקן הישראלי ת"י 5568 ולהנחיות WCAG 2.1 ברמה AA.</p>
         <h2>מה הונגש באתר</h2>
         <ul>
@@ -24,7 +25,6 @@ export default function Accessibility() {
         </ul>
         <h2>נתקלתם בבעיה?</h2>
         <p>אם מצאתם רכיב שאינו נגיש, נשמח לשמוע ולתקן. רכז הנגישות: יניר סול · טלפון: <a href={TEL} dir="ltr">{PHONE}</a> · כתובת: {ADDRESS}.</p>
-        <p>תאריך עדכון ההצהרה: נובמבר 2026.</p>
       </main>
       <Footer />
     </Layout>
