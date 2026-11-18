@@ -21,7 +21,7 @@ export function StudioVideo() {
   return (
     <section aria-label="סרטון האולפן" className="vidsec">
       <div className="vidwrap" ref={ref}>
-        <img className="vidimg" src={paused ? '/studio-poster.jpg' : '/studio.webp?v=2'} width="678" height="380"
+        <img className="vidimg" src={paused ? '/studio-poster.jpg' : '/studio.webp?v=3'} width="678" height="380"
           alt="אולפן ההקלטות של SOL Production – יניר סול הפקות: חדר הבקרה, תא השירה וחדר החזרות באור יהודה" />
         <button type="button" className="vidbtn" onClick={() => setPaused(!paused)} aria-label={paused ? 'הפעלת הסרטון' : 'עצירת הסרטון'}>
           {paused
