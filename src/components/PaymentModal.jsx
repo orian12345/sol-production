@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { PAYMENT } from '../data.js';
 import { IconClose, IconWA } from './icons.jsx';
 import { BitPanel, PayboxPanel, copyText } from './PayPanels.jsx';
@@ -13,8 +14,9 @@ import { BitPanel, PayboxPanel, copyText } from './PayPanels.jsx';
 const ils = (n) => '₪' + Number(n).toLocaleString('en-US');
 const ico = (d) => <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{d}</svg>;
 
-export function PaymentModal({ open, onClose, deposit, online, demo, due, summary, onOnline, onGroup, onOffline }) {
+export function PaymentModal({ open, onClose, deposit, online, groupOnline, demo, due, summary, onOnline, onGroup, onOffline }) {
   const [method, setMethod] = useState('');
+  const gOnline = groupOnline ?? online; // תשלום קבוצתי דרך הסליקה (באקדמיה — תמיד דרך דף המשתתף)
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const [people, setPeople] = useState(3);
@@ -69,7 +71,8 @@ ${partUrl(i, n)}`;
     { id: 'cash', label: 'מזומן', sub: 'משלמים באולפן לפני הסשן', on: true, icon: ico(<><rect x="2" y="6" width="20" height="12" rx="2" /><circle cx="12" cy="12" r="2.5" /><path d="M6 12h.01M18 12h.01" /></>) },
   ];
 
-  return (
+  // נפתח ישירות על הדף (portal) — כדי שכרטיס עם אפקטים (למשל באקדמיה) לא "יכלא" את החלון
+  return createPortal(
     <div className="pm-back" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="pm glass" role="dialog" aria-modal="true" aria-labelledby="pm-title" tabIndex={-1} ref={boxRef}>
         <div className="pm-head">
@@ -116,7 +119,7 @@ ${partUrl(i, n)}`;
             {method === 'group' && !links && (
               <>
                 <h4>תשלום קבוצתי</h4>
-                {online
+                {gOnline
                   ? <p>המקדמה מתחלקת שווה בין המשתתפים. כל אחד מקבל קישור תשלום משלו — אפשר לשלוח לו בוואטסאפ. השעה נשמרת ל-60 דקות עד שמשולם החלק הראשון.</p>
                   : <p>כל משתתף מקבל קישור לדף תשלום אישי עם החלק שלו, ומשלם בביט, PayBox או אשראי. בוחרים כמה משתתפים:</p>}
                 <label className="lbl" htmlFor="pm-people">כמה משתתפים?</label>
@@ -124,10 +127,10 @@ ${partUrl(i, n)}`;
                   <button type="button" className="icon-btn" aria-label="פחות משתתפים" onClick={() => setPeople((p) => Math.max(2, p - 1))}>−</button>
                   <output id="pm-people" aria-live="polite">{people}</output>
                   <button type="button" className="icon-btn" aria-label="יותר משתתפים" onClick={() => setPeople((p) => Math.min(10, p + 1))}>+</button>
-                  {deposit > 0 && online && <span className="pm-each">{ils(Math.ceil(deposit / people))} לכל משתתף</span>}
-                  {!online && share(people) > 0 && <span className="pm-each">{ils(share(people))} לכל משתתף</span>}
+                  {deposit > 0 && gOnline && <span className="pm-each">{ils(Math.ceil(deposit / people))} לכל משתתף</span>}
+                  {!gOnline && share(people) > 0 && <span className="pm-each">{ils(share(people))} לכל משתתף</span>}
                 </div>
-                <button type="button" className="btn btn-main" disabled={busy} onClick={() => (online ? run(() => onGroup(people)) : setLinks({ offline: true, n: people }))}>{busy ? 'יוצרים קישורים…' : online ? 'יצירת קישורי תשלום' : 'המשך'}</button>
+                <button type="button" className="btn btn-main" disabled={busy} onClick={() => (gOnline ? run(() => onGroup(people)) : setLinks({ offline: true, n: people }))}>{busy ? 'יוצרים קישורים…' : gOnline ? 'יצירת קישורי תשלום' : 'המשך'}</button>
               </>
             )}
             {method === 'group' && links && links.offline && (
@@ -207,6 +210,7 @@ ${partUrl(i, n)}`;
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

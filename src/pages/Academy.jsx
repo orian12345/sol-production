@@ -3,6 +3,7 @@ import { Layout, Header, Footer, BookBar } from '../components/Layout.jsx';
 import { IconWA, IconClose } from '../components/icons.jsx';
 import { waLink, ADDRESS, CANCEL_POLICY, findCoupon } from '../data.js';
 import { academyData, academyText } from '../academy.js';
+import { PaymentModal } from '../components/PaymentModal.jsx';
 
 const ils = (n) => '₪' + n.toLocaleString('en-US');
 
@@ -82,20 +83,47 @@ function TeacherCard({ t, pay, onDemoPaid, onSent, coupon }) {
     if (form === 'req') return sendReq();
     if (!date || !time) { setErr(ERRORS.missing_slot); return; }
     if (!c.name.trim() || c.phone.replace(/\D/g, '').length < 9) { setErr(ERRORS.missing_contact); return; }
-    setBusy(true);
-    if (pay.demo) { setTimeout(() => { setBusy(false); setForm(false); onDemoPaid(); }, 900); return; }
-    try {
-      const r = await fetch('/api/academy-pay', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ teacher: t.teacher, instrument: t.instrument, tier: tierName, price: tier.price, coupon: couponOn ? coupon.code : '', date, time, ...c }),
-      });
-      const j = await r.json().catch(() => ({}));
-      if (r.ok && j.url) { window.location.href = j.url; return; }
-      setErr(ERRORS[j.error] || ERRORS.payment_unavailable);
-      if (j.error === 'slot_taken') { setTakenMap((m) => ({ ...(m || {}), [time]: true })); setTime(''); }
-    } catch { setErr(ERRORS.payment_unavailable); }
-    setBusy(false);
+    setPmOpen(true);
+  };
+
+  /* ---------- תשלום + הסכם — בדיוק כמו בהזמנת אולפן ----------
+     אחרי פרטי הקשר נפתח חלון אמצעי התשלום (אשראי כשמחובר, ביט, PayBox, העברה, קבוצתי, מזומן),
+     ואז ההסכם לחתימה (/quote). */
+  const [pmOpen, setPmOpen] = useState(false);
+  const svcLabel = `SOL Academy – שיעורי ${t.instrument} עם ${t.teacher}`;
+  const quoteData = (extra = {}) => ({
+    svcLabel,
+    selected: [{ id: 'academy-' + t.id + '-' + tier.id, name: `${svcLabel}: ${tierName}${couponOn ? ` (קופון ${coupon.label} – ${coupon.percent}% הנחה)` : ''}`, price: ils(finalPrice), amount: finalPrice }],
+    coupon: '', date, time, dur: '1', durLabel: '60 דקות',
+    name: c.name.trim(), phone: c.phone.trim(), email: c.email.trim(), notes: '', demo: pay.demo, ...extra,
+  });
+  const goAgreement = (payMethod, payStatus) => { window.location.href = '/quote#q=' + encodeURIComponent(JSON.stringify(quoteData({ payMethod, payStatus }))); };
+  // אשראי / ביט דרך Morning (כשמחובר)
+  const payOnline = async (group, label) => {
+    if (pay.demo) { goAgreement(label, 'שולם ✓ (הדגמה)'); return; }
+    try { sessionStorage.setItem('sol-pending', JSON.stringify(quoteData({ payMethod: label, payStatus: 'שולם ✓' }))); } catch { /* ignore */ }
+    const r = await fetch('/api/academy-pay', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ teacher: t.teacher, instrument: t.instrument, tier: tierName, price: tier.price, coupon: couponOn ? coupon.code : '', date, time, group, ...c }),
+    });
+    const j = await r.json().catch(() => ({}));
+    if (r.ok && j.url) { window.location.href = j.url; return; }
+    if (j.error === 'slot_taken') { setTakenMap((m) => ({ ...(m || {}), [time]: true })); setTime(''); }
+    return ERRORS[j.error] || ERRORS.payment_unavailable;
+  };
+  // ביט / PayBox / העברה / קבוצתי / מזומן — הודעה ליניר ואז להסכם
+  const payOffline = async (id, label, status) => {
+    if (!pay.demo && pay.notify) {
+      const lines = [
+        `כלי: ${t.instrument}`, `מורה: ${t.teacher}`,
+        `חבילה: ${tierName} – ${priceStr}`,
+        `מועד: ${when}`,
+        c.email.trim() && `מייל: ${c.email.trim()}`,
+        `אמצעי תשלום: ${label}`, `סטטוס: ${status}`,
+      ].filter(Boolean);
+      await fetch('/api/request', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ kind: 'academy', name: c.name.trim(), phone: c.phone, lines, website: hp }) }).catch(() => {});
+    }
+    goAgreement(label, status);
   };
 
   const sendReq = async () => {
@@ -185,9 +213,9 @@ function TeacherCard({ t, pay, onDemoPaid, onSent, coupon }) {
         </span>
       </fieldset>
 
-      {pay.on && !form && (
+      {!form && (
         <button type="button" className="ac-cta" onClick={() => { setErr(''); setForm('pay'); }}>
-          {deposit < finalPrice ? `תשלום מקדמה (${ils(deposit)}) ושריון מקום` : `תשלום (${ils(deposit)}) ושריון מקום`}
+          המשך לתשלום ולהסכם
         </button>
       )}
       {form && (
@@ -195,9 +223,9 @@ function TeacherCard({ t, pay, onDemoPaid, onSent, coupon }) {
           <input type="text" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hp" value={hp} onChange={(e) => setHp(e.target.value)} />
           <div className="ac-pay-head">
             {form === 'pay'
-              ? <strong>{deposit < finalPrice ? `מקדמה ${ils(deposit)}` : `תשלום ${ils(deposit)}`}</strong>
+              ? <strong>פרטים להזמנה · {ils(finalPrice)}</strong>
               : <strong>שליחת בקשה ליניר</strong>}
-            <span>{tierName}{form === 'pay' && deposit < finalPrice ? ` · יתרה ${ils(finalPrice - deposit)} בתיאום` : ` · ${ils(finalPrice)}`}{couponOn ? ` · קופון ${coupon.label}` : ''}</span>
+            <span>{tierName}{form === 'pay' ? '' : ` · ${ils(finalPrice)}`}{couponOn ? ` · קופון ${coupon.label}` : ''}</span>
             <span>{when ? 'מועד: ' + when : form === 'pay' ? 'בחרו תאריך ושעה למעלה' : 'מועד: גמיש – נתאם יחד'}</span>
             <button type="button" className="ac-x" aria-label="סגירה" onClick={() => setForm(false)}><IconClose /></button>
           </div>
@@ -205,13 +233,13 @@ function TeacherCard({ t, pay, onDemoPaid, onSent, coupon }) {
           <input id={'acn-' + t.id} className="ac-field" autoComplete="name" value={c.name} onChange={(e) => setC({ ...c, name: e.target.value })} />
           <label className="ac-lbl" htmlFor={'acp-' + t.id}>טלפון</label>
           <input id={'acp-' + t.id} className="ac-field" type="tel" dir="ltr" autoComplete="tel" placeholder="050-0000000" value={c.phone} onChange={(e) => setC({ ...c, phone: e.target.value })} />
-          <label className="ac-lbl" htmlFor={'ace-' + t.id}>{form === 'pay' ? 'מייל לקבלה (לא חובה)' : 'מייל (לא חובה)'}</label>
+          <label className="ac-lbl" htmlFor={'ace-' + t.id}>מייל (לא חובה)</label>
           <input id={'ace-' + t.id} className="ac-field" type="email" dir="ltr" autoComplete="email" value={c.email} onChange={(e) => setC({ ...c, email: e.target.value })} />
           {err && <p role="alert" className="ac-err">{err}</p>}
           {form === 'pay' ? (
             <>
-              <button type="submit" className="ac-cta" disabled={busy}>{busy ? 'פותחים את דף התשלום…' : 'למעבר לתשלום מאובטח'}</button>
-              <p className="ac-fine">התשלום מאובטח דרך Morning והקבלה נשלחת אוטומטית. {CANCEL_POLICY.short} <a href="/terms">תקנון</a> · <a href="/cancellation">מדיניות ביטולים</a> · <a href="/privacy">מדיניות פרטיות</a></p>
+              <button type="submit" className="ac-cta" disabled={busy}>בחירת אמצעי תשלום</button>
+              <p className="ac-fine">אשראי · ביט · PayBox · העברה בנקאית · תשלום קבוצתי · מזומן. אחרי התשלום חותמים על ההסכם. {CANCEL_POLICY.short} <a href="/terms">תקנון</a> · <a href="/cancellation">מדיניות ביטולים</a> · <a href="/privacy">מדיניות פרטיות</a></p>
             </>
           ) : (
             <>
@@ -236,6 +264,9 @@ function TeacherCard({ t, pay, onDemoPaid, onSent, coupon }) {
       {pay.notify && err && form === 'req' && err.includes('בוואטסאפ למטה') && (
         <a className="ac-cta ac-cta-2" href={waLink(msg)} target="_blank" rel="noopener"><IconWA size={20} />שליחה ישירה בוואטסאפ</a>
       )}
+      <PaymentModal open={pmOpen} onClose={() => setPmOpen(false)} deposit={pay.on ? deposit : 0} online={pay.on || pay.demo} groupOnline={false} demo={pay.demo}
+        due={{ amount: finalPrice, fixed: true }} summary={{ svc: svcLabel, date: date ? fmtDate(date) : '', time, by: c.name.trim() }}
+        onOnline={payOnline} onGroup={() => null} onOffline={payOffline} />
     </article>
   );
 }
@@ -253,7 +284,13 @@ export default function Academy() {
   useEffect(() => {
     const q = new URLSearchParams(window.location.search);
     if (q.get('demo')) { setPay({ on: true, deposit: 100, demo: true, calendar: true, notify: true }); return; }
-    if (q.get('paid')) setResult('paid');
+    if (q.get('paid')) {
+      // חזרה מדף התשלום → ממשיכים להסכם לחתימה (כמו בהזמנת אולפן)
+      let pending = null;
+      try { pending = sessionStorage.getItem('sol-pending'); sessionStorage.removeItem('sol-pending'); } catch { /* ignore */ }
+      if (pending) { window.location.replace('/quote#q=' + encodeURIComponent(pending)); return; }
+      setResult('paid');
+    }
     else if (q.get('payfail')) setResult('failed');
     if (q.get('paid') || q.get('payfail')) window.history.replaceState(null, '', '/academy');
     fetch('/api/availability').then((r) => (r.ok ? r.json() : null)).then((j) => {

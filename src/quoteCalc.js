@@ -11,6 +11,8 @@ export function quoteLines(q) {
   if (!picked.length) return { lines: [{ desc: q.svcLabel, qty: '', unit: '', total: 'ייקבע מול יניר' }], total: null, open: true };
   let total = 0, open = false;
   const lines = picked.map((sel) => {
+    // פריט עם סכום קבוע שלא מהמחירון (למשל חבילת שיעורים ב-SOL Academy)
+    if (typeof sel.amount === 'number' && sel.amount > 0) { total += sel.amount; return { desc: sel.name, qty: '1', unit: ils(sel.amount), total: ils(sel.amount) }; }
     const it = ALL_ITEMS.find((x) => x.id === sel.id);
     if (!it) { open = true; return { desc: sel.name, qty: '', unit: sel.price || '', total: 'ייקבע מול יניר' }; }
     if (it.quote) { open = true; return { desc: it.name, qty: '', unit: '', total: 'לפי הצעת מחיר אישית' }; }
