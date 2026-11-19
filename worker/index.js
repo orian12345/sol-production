@@ -105,17 +105,19 @@ async function busyRanges(env, date) {
     for (const k of list0.keys) { const h = await env.BOOKINGS.get(k.name, 'json'); if (h) ranges.push([h.start, h.end]); }
     return ranges;
   }
-  // 1) מה שכבר ביומן של יניר (Google)
-  const token = await googleToken(env);
-  const fb = await fetch('https://www.googleapis.com/calendar/v3/freeBusy', {
-    method: 'POST',
-    headers: { authorization: 'Bearer ' + token, 'content-type': 'application/json' },
-    body: JSON.stringify({ timeMin: dayStart.toISOString(), timeMax: dayEnd.toISOString(), timeZone: TZ, items: [{ id: env.GOOGLE_CALENDAR_ID }] }),
-  });
-  if (!fb.ok) throw new Error('google freeBusy ' + fb.status + ' ' + (await fb.text()));
-  const cal = (await fb.json()).calendars[env.GOOGLE_CALENDAR_ID] || {};
-  if (cal.errors && cal.errors.length) throw new Error('google calendar access: ' + JSON.stringify(cal.errors));
-  for (const b of cal.busy || []) ranges.push([new Date(b.start).getTime(), new Date(b.end).getTime()]);
+  // 1) מה שכבר ביומן של יניר (Google) — תקלה בגוגל לא מפילה את האתר
+  try {
+    const token = await googleToken(env);
+    const fb = await fetch('https://www.googleapis.com/calendar/v3/freeBusy', {
+      method: 'POST',
+      headers: { authorization: 'Bearer ' + token, 'content-type': 'application/json' },
+      body: JSON.stringify({ timeMin: dayStart.toISOString(), timeMax: dayEnd.toISOString(), timeZone: TZ, items: [{ id: env.GOOGLE_CALENDAR_ID }] }),
+    });
+    if (!fb.ok) throw new Error('google freeBusy ' + fb.status + ' ' + (await fb.text()));
+    const cal = (await fb.json()).calendars[env.GOOGLE_CALENDAR_ID] || {};
+    if (cal.errors && cal.errors.length) throw new Error('google calendar access: ' + JSON.stringify(cal.errors));
+    for (const b of cal.busy || []) ranges.push([new Date(b.start).getTime(), new Date(b.end).getTime()]);
+  } catch (e) { console.error('google busy', e && e.message); }
   // 2) שעות שמישהו באמצע לשלם עליהן
   const list = await env.BOOKINGS.list({ prefix: 'hold:' + date + ':' });
   for (const k of list.keys) {
@@ -671,6 +673,21 @@ async function addCalEvent(env, id, q, name, phone, payNote) {
   };
   const ttl = Math.max(3600, Math.floor((end - Date.now()) / 1000) + 60 * 60 * 24 * 60);
   await env.BOOKINGS.put('cal:' + q.date + ':' + id, JSON.stringify(ev), { expirationTtl: ttl });
+  // ישירות ליומן הגוגל של יניר (מופיע מיד) — כשהחיבור מוגדר
+  if (googleOn(env)) {
+    const token = await googleToken(env);
+    const r = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(env.GOOGLE_CALENDAR_ID)}/events`, {
+      method: 'POST',
+      headers: { authorization: 'Bearer ' + token, 'content-type': 'application/json' },
+      body: JSON.stringify({
+        id: ('sol' + String(id).replace(/[^0-9a-v]/gi, '').toLowerCase()).slice(0, 60),
+        summary: ev.title, description: ev.desc, location: 'הראשונים 41, אור יהודה',
+        start: { dateTime: new Date(start).toISOString(), timeZone: TZ }, end: { dateTime: new Date(end).toISOString(), timeZone: TZ },
+        colorId: '9',
+      }),
+    });
+    if (!r.ok && r.status !== 409) console.error('google insert', r.status, (await r.text()).slice(0, 200));
+  }
 }
 
 const icsEsc = (v) => String(v || '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');

@@ -2,3 +2,8 @@ node_modules/
 dist/
 dist-ssr/
 .wrangler/
+
+# מפתח גוגל — לעולם לא לגיטהאב
+google-key.json
+*-key.json
+.dev.vars
