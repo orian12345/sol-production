@@ -90,8 +90,9 @@ const validTime = (s) => /^\d{2}:00$/.test(s || '');
 async function busyRanges(env, date) {
   const dayStart = israelTime(date, '00:00'), dayEnd = new Date(dayStart.getTime() + 24 * 3600 * 1000);
   const ranges = [];
-  // 0) הזמנות שאושרו באתר (יומן ההזמנות של האתר)
-  if (env.BOOKINGS) {
+  // 0) הזמנות שאושרו באתר — רק כשאין חיבור ישיר לגוגל. כשיש, היומן של יניר הוא הקובע:
+  //    הזמנה נכתבת אליו מיד, ואם יניר מוחק אירוע (ביטול) — השעה מתפנה באתר.
+  if (env.BOOKINGS && !googleOn(env)) {
     const own = await env.BOOKINGS.list({ prefix: 'cal:' + date + ':' });
     for (const k of own.keys) { const ev = await env.BOOKINGS.get(k.name, 'json'); if (ev) ranges.push([ev.start, ev.end]); }
   }
