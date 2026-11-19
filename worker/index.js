@@ -787,14 +787,44 @@ function icsDur(d) {
 /* בדיקה פנימית (מוגנת במפתח של יומן ההזמנות): האם הקישור ליומן של יניר עובד — בלי לחשוף תוכן */
 async function calCheck(url, env) {
   if (!env.CAL_FEED_KEY || url.searchParams.get('k') !== env.CAL_FEED_KEY) return new Response('not found', { status: 404 });
-  if (!(env.CAL_ICS_URL || env.ICLOUD_ICS_URL)) return json({ linked: false });
+  // גוגל ישיר: האם הרובוט רואה את היומן (freeBusy) וכמה רשאי לכתוב (calendarList)
+  let google = 'off';
+  if (googleOn(env)) {
+    try {
+      const token = await googleToken(env);
+      const now0 = new Date();
+      const fb = await fetch('https://www.googleapis.com/calendar/v3/freeBusy', { method: 'POST', headers: { authorization: 'Bearer ' + token, 'content-type': 'application/json' },
+        body: JSON.stringify({ timeMin: now0.toISOString(), timeMax: new Date(now0.getTime() + 30 * 86400000).toISOString(), items: [{ id: env.GOOGLE_CALENDAR_ID }] }) });
+      const fj = await fb.json();
+      const c = (fj.calendars || {})[env.GOOGLE_CALENDAR_ID] || {};
+      const ev = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(env.GOOGLE_CALENDAR_ID)}/events?maxResults=1`, { headers: { authorization: 'Bearer ' + token } });
+      google = { freeBusy: fb.status, errors: c.errors || null, busyNext30Days: (c.busy || []).length, canReadEvents: ev.status };
+    } catch (e) { google = 'error: ' + String(e && e.message || e).slice(0, 120); }
+  }
+  // ?sync=1 — מעתיק ליומן הגוגל של יניר הזמנות שכבר נשמרו באתר (אירוע קיים לא משוכפל)
+  if (googleOn(env) && url.searchParams.get('sync') === '1' && env.BOOKINGS) {
+    const res = [];
+    const token = await googleToken(env);
+    const page = await env.BOOKINGS.list({ prefix: 'cal:' });
+    for (const k of page.keys) {
+      const ev = await env.BOOKINGS.get(k.name, 'json'); if (!ev) continue;
+      const id = k.name.split(':').pop();
+      const r = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(env.GOOGLE_CALENDAR_ID)}/events`, { method: 'POST',
+        headers: { authorization: 'Bearer ' + token, 'content-type': 'application/json' },
+        body: JSON.stringify({ id: ('sol' + id.replace(/[^0-9a-v]/gi, '').toLowerCase()).slice(0, 60), summary: ev.title, description: ev.desc, location: 'הראשונים 41, אור יהודה',
+          start: { dateTime: new Date(ev.start).toISOString(), timeZone: TZ }, end: { dateTime: new Date(ev.end).toISOString(), timeZone: TZ }, colorId: '9' }) });
+      res.push(r.status === 409 ? 'exists' : r.status);
+    }
+    google = { ...(typeof google === 'object' ? google : {}), synced: res };
+  }
+  if (!(env.CAL_ICS_URL || env.ICLOUD_ICS_URL)) return json({ linked: false, google });
   try {
     icsCache = { at: 0, text: '' };
     const now = Date.now();
     const busy = await icloudBusy(env, now - 365 * 86400000, now + 60 * 86400000);
     const text = icsCache.text;
     const host = new URL(String(env.CAL_ICS_URL || env.ICLOUD_ICS_URL).replace(/^webcal:/i, 'https:')).hostname;
-    return json({ linked: true, host, isCalendar: text.includes('BEGIN:VCALENDAR'), totalEvents: (text.match(/BEGIN:VEVENT/g) || []).length,
+    return json({ google, linked: true, host, isCalendar: text.includes('BEGIN:VCALENDAR'), totalEvents: (text.match(/BEGIN:VEVENT/g) || []).length,
       busyLastYear: busy.filter(([a]) => a < now).length, busyNext60Days: busy.filter(([a]) => a >= now).length });
   } catch (e) { return json({ linked: true, error: String(e && e.message || e).slice(0, 120) }); }
 }
