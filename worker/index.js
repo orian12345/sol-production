@@ -52,6 +52,7 @@ export default {
       if (url.pathname.startsWith('/api/agreement/') && request.method === 'GET') return await getAgreement(url, env);
       if (url.pathname === '/api/pay-claim' && request.method === 'POST') return await payClaim(request, url, env);
       if (url.pathname === '/api/calendar.ics' && request.method === 'GET') return await calendarFeed(url, env);
+      if (url.pathname === '/api/cal-check' && request.method === 'GET') return await calCheck(url, env);
       if (url.pathname === '/api/pay-status' && request.method === 'GET') return await payStatus(url, env);
       if (url.pathname === '/api/pay-approve') return await payApprove(request, url, env);
       if (url.pathname.startsWith('/api/')) return json({ error: 'not_found' }, 404);
@@ -763,4 +764,20 @@ function icsDur(d) {
   const m = String(d).match(/P(?:(\d+)W)?(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?/);
   if (!m) return 3600000;
   return ((+m[1] || 0) * 7 * 86400 + (+m[2] || 0) * 86400 + (+m[3] || 0) * 3600 + (+m[4] || 0) * 60 + (+m[5] || 0)) * 1000;
+}
+
+
+/* בדיקה פנימית (מוגנת במפתח של יומן ההזמנות): האם הקישור ליומן של יניר עובד — בלי לחשוף תוכן */
+async function calCheck(url, env) {
+  if (!env.CAL_FEED_KEY || url.searchParams.get('k') !== env.CAL_FEED_KEY) return new Response('not found', { status: 404 });
+  if (!(env.CAL_ICS_URL || env.ICLOUD_ICS_URL)) return json({ linked: false });
+  try {
+    icsCache = { at: 0, text: '' };
+    const now = Date.now();
+    const busy = await icloudBusy(env, now - 365 * 86400000, now + 60 * 86400000);
+    const text = icsCache.text;
+    const host = new URL(String(env.CAL_ICS_URL || env.ICLOUD_ICS_URL).replace(/^webcal:/i, 'https:')).hostname;
+    return json({ linked: true, host, isCalendar: text.includes('BEGIN:VCALENDAR'), totalEvents: (text.match(/BEGIN:VEVENT/g) || []).length,
+      busyLastYear: busy.filter(([a]) => a < now).length, busyNext60Days: busy.filter(([a]) => a >= now).length });
+  } catch (e) { return json({ linked: true, error: String(e && e.message || e).slice(0, 120) }); }
 }
