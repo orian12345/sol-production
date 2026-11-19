@@ -94,8 +94,8 @@ async function busyRanges(env, date) {
     const own = await env.BOOKINGS.list({ prefix: 'cal:' + date + ':' });
     for (const k of own.keys) { const ev = await env.BOOKINGS.get(k.name, 'json'); if (ev) ranges.push([ev.start, ev.end]); }
   }
-  // 0ב) היומן של יניר ב-iCloud (קישור ליומן ציבורי — סוד ICLOUD_ICS_URL)
-  if (env.ICLOUD_ICS_URL) {
+  // 0ב) היומן של יניר — קישור iCal סודי (Google: "כתובת סודית בפורמט iCal" / iCloud: "יומן ציבורי") — סוד CAL_ICS_URL
+  if (env.CAL_ICS_URL || env.ICLOUD_ICS_URL) {
     try { for (const r of await icloudBusy(env, dayStart.getTime(), dayEnd.getTime())) ranges.push(r); }
     catch (e) { console.error('icloud', e && e.message); }
   }
@@ -702,7 +702,7 @@ async function calendarFeed(url, env) {
 let icsCache = { at: 0, text: '' };
 async function icloudBusy(env, from, to) {
   if (Date.now() - icsCache.at > 5 * 60 * 1000 || !icsCache.text) {
-    const u = String(env.ICLOUD_ICS_URL).replace(/^webcal:/i, 'https:');
+    const u = String(env.CAL_ICS_URL || env.ICLOUD_ICS_URL).replace(/^webcal:/i, 'https:');
     const r = await fetch(u, { headers: { 'user-agent': 'SOL-Production-site' } });
     if (!r.ok) throw new Error('icloud fetch ' + r.status);
     icsCache = { at: Date.now(), text: await r.text() };
