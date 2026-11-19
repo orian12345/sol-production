@@ -293,7 +293,7 @@ export function Booking({ st, setSt }) {
       {demo && (
         <div className="notice demo" role="note">
           <strong>מצב הדגמה</strong>
-          <span>כך ייראה השריון ללקוחות. אין כאן תשלום אמיתי ושום דבר לא נכנס ליומן — במקום דף התשלום של Morning קופצים ישר להודעת האישור.</span>
+          <span>כך ייראה השריון ללקוחות. אין כאן תשלום אמיתי ושום דבר לא נכנס ליומן — במקום דף התשלום קופצים ישר להודעת האישור.</span>
         </div>
       )}
       {result === 'sent' && (
@@ -478,7 +478,7 @@ export function Booking({ st, setSt }) {
                 </button>
                 {err && <p role="alert" style={{ margin: 0, fontSize: 14, color: '#fca5a5', textAlign: 'center' }}>{err}</p>}
                 <p className="note" style={{ margin: 0, textAlign: 'center' }}>
-                  התאריך משוריין רק אחרי שהתשלום עובר. התשלום מאובטח דרך Morning, והקבלה נשלחת אליך אוטומטית.
+                  התאריך משוריין רק אחרי שהתשלום עובר. התשלום מאובטח, והקבלה נשלחת אליך.
                 </p>
                 <p className="note policy-note">{CANCEL_POLICY.short} <a href="/terms">תקנון</a> · <a href="/cancellation">מדיניות ביטולים</a> · <a href="/privacy">מדיניות פרטיות</a></p>
                 <a className="btn btn-glass btn-sm" href={waLink(msg)} target="_blank" rel="noopener" style={{ width: '100%' }}><IconWA size={18} />שאלה ליניר בוואטסאפ</a>

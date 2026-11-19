@@ -12,7 +12,7 @@ export default function Privacy() {
       <Header cta={{ href: '/', label: 'חזרה לדף הבית', glass: true }} />
       <main className="wrap legal">
         <h1 className="d">מדיניות פרטיות</h1>
-        <p className="terms-updated">עודכן לאחרונה: 17/11/2026</p>
+        <p className="terms-updated">עודכן לאחרונה: 19/11/2026</p>
         <p>אנחנו ב-SOL Production מכבדים את הפרטיות שלכם. כאן מוסבר איזה מידע נאסף באתר, למה, איפה הוא נשמר ומה הזכויות שלכם.</p>
 
         <h2>מי אחראי על המידע</h2>
@@ -39,8 +39,7 @@ export default function Privacy() {
         <ul>
           <li><strong>Cloudflare</strong> — אחסון האתר ושמירת ההזמנות וההסכמים.</li>
           <li><strong>Resend</strong> — שליחת פרטי ההזמנה ליניר במייל.</li>
-          <li><strong>Hyp</strong> — דף התשלום המאובטח באשראי.</li>
-          <li><strong>Morning (חשבונית ירוקה)</strong> — הפקת קבלות (וסליקה, אם תחובר).</li>
+          <li><strong>Hyp</strong> — דף התשלום המאובטח באשראי (הסליקה דרך מקס).</li>
           <li><strong>Google</strong> — יומן לתיאום מועדים (כשיחובר), וכן גופנים, מפה ותמונות מיוטיוב שמוצגים באתר.</li>
         </ul>
         <p>תשלום בביט, PayBox או בהעברה בנקאית נעשה ישירות באפליקציה או בבנק שלכם, לפי תנאי הפרטיות שלהם.</p>

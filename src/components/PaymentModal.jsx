@@ -127,7 +127,7 @@ ${partUrl(i, n)}`;
             {((method === 'card' && online) || (method === 'bit' && online)) && (
               <>
                 <h4>{method === 'card' ? 'תשלום בכרטיס אשראי' : 'תשלום בביט'}</h4>
-                <p>נעבור לדף תשלום מאובטח של Morning{deposit > 0 ? <> לתשלום מקדמה של <b>{ils(deposit)}</b></> : null}. הקבלה תישלח אליך אוטומטית, ואחרי התשלום נחזור לכאן לחתימה על ההסכם.</p>
+                <p>נעבור לדף תשלום מאובטח{deposit > 0 ? <> לתשלום מקדמה של <b>{ils(deposit)}</b></> : null}. הקבלה תישלח אליך אוטומטית, ואחרי התשלום נחזור לכאן לחתימה על ההסכם.</p>
                 <button type="button" className="btn btn-main" disabled={busy} onClick={() => run(() => onOnline(method === 'card' ? 100 : 120, method === 'card' ? 'כרטיס אשראי' : 'ביט'))}>
                   {busy ? 'פותחים את דף התשלום…' : 'למעבר לתשלום מאובטח'}
                 </button>
