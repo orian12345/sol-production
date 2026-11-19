@@ -5,12 +5,20 @@
 {
   "name": "sol-production",
   "main": "worker/index.js",
+  // הכתובת הישנה (workers.dev) נשארת פעילה ומפנה לדומיין — כדי שקישורים ישנים ימשיכו לעבוד
+  "workers_dev": true,
   "compatibility_date": "2026-11-01",
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
-    "run_worker_first": ["/api/*"]
+    // השרת רץ ראשון בכל בקשה: מפנה את solproduction.co.il ואת workers.dev ל-www, ומגיש את הדפים
+    "run_worker_first": true
   },
+  // הדומיין: www.solproduction.co.il (ראשי) + solproduction.co.il (מפנה ל-www)
+  "routes": [
+    { "pattern": "www.solproduction.co.il", "custom_domain": true },
+    { "pattern": "solproduction.co.il", "custom_domain": true }
+  ],
   "kv_namespaces": [
     { "binding": "BOOKINGS", "id": "4b1e8004be97414b8065f99b9806e0c4" }
   ],
@@ -26,6 +34,6 @@
     // סוג המסמך ש-Morning תפיק: 400 = קבלה (עוסק פטור) | 320 = חשבונית מס / קבלה (עוסק מורשה)
     "MORNING_DOC_TYPE": "400",
     // כתובת האתר שאליה הלקוח חוזר אחרי התשלום
-    "SITE_URL": "https://sol-production.oriannada11.workers.dev"
+    "SITE_URL": "https://www.solproduction.co.il"
   }
 }

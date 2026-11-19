@@ -36,6 +36,10 @@ const configured = (env) =>
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    // כתובת ראשית אחת לגוגל: solproduction.co.il ו-workers.dev → https://www.solproduction.co.il (ה-API עובד בכל הכתובות)
+    if (!url.pathname.startsWith('/api/') && (url.protocol === 'http:' || url.hostname === 'solproduction.co.il' || url.hostname.endsWith('.workers.dev'))) {
+      return Response.redirect('https://www.solproduction.co.il' + url.pathname + url.search, 301);
+    }
     try {
       if (url.pathname === '/api/availability' && request.method === 'GET') return await availability(url, env);
       if (url.pathname === '/api/book' && request.method === 'POST') return await book(request, url, env);
