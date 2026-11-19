@@ -27,6 +27,8 @@ export function Booking({ st, setSt }) {
   const [result, setResult] = useState('');       // 'booked' | 'failed'
 
   const paid = cfg.configured;
+  // בדיקת שעות פנויות: יומן ההזמנות של האתר + היומן של יניר (iCloud), גם בלי תשלום מקוון
+  const checkSlots = paid || !!cfg.calendar;
   const services = st.services || [];   // בכניסה לאתר שום שירות לא מסומן — הלקוח בוחר
   const selected = st.selected || [];
   // קופון (למשל Mayan = 10% על החבילות שנבחרו מהמחירון)
@@ -82,7 +84,7 @@ export function Booking({ st, setSt }) {
 
   // שעות פנויות מהיומן של יניר
   useEffect(() => {
-    if (!paid || !st.date) { setSlots(null); return; }
+    if (!checkSlots || !st.date) { setSlots(null); return; }
     let live = true;
     setLoadingSlots(true);
     if (demo) {
@@ -101,12 +103,12 @@ export function Booking({ st, setSt }) {
       .catch(() => { if (live) setSlots([]); })
       .finally(() => { if (live) setLoadingSlots(false); });
     return () => { live = false; };
-  }, [paid, demo, st.date, dur]);
+  }, [checkSlots, demo, st.date, dur]);
 
   const allTimes = [];
   for (let h = OPEN; h + dur <= CLOSE; h++) allTimes.push((h < 10 ? '0' : '') + h + ':00');
   const freeOf = (t) => !slots || !!(slots.find((s) => s.time === t) || {}).free;
-  const time = paid
+  const time = checkSlots
     ? (slots && freeOf(st.time) && allTimes.includes(st.time) ? st.time : '')
     : (allTimes.includes(st.time) ? st.time : '');
 
@@ -374,17 +376,17 @@ export function Booking({ st, setSt }) {
 
             {showHours && (
               <fieldset>
-                <legend className="lbl">3 · שעת התחלה{paid ? ' (רק שעות פנויות)' : ''}</legend>
-                {paid && !st.date && <p className="note" style={{ margin: 0 }}>בחרו קודם תאריך כדי לראות שעות פנויות.</p>}
-                {paid && st.date && loadingSlots && <p className="note" style={{ margin: 0 }}>בודקים ביומן…</p>}
-                {paid && st.date && !loadingSlots && slots && !slots.some((s) => s.free) && (
+                <legend className="lbl">3 · שעת התחלה{checkSlots ? ' (רק שעות פנויות)' : ''}</legend>
+                {checkSlots && !st.date && <p className="note" style={{ margin: 0 }}>בחרו קודם תאריך כדי לראות שעות פנויות.</p>}
+                {checkSlots && st.date && loadingSlots && <p className="note" style={{ margin: 0 }}>בודקים ביומן…</p>}
+                {checkSlots && st.date && !loadingSlots && slots && !slots.some((s) => s.free) && (
                   <p className="note" style={{ margin: 0 }}>{showDur ? 'אין שעות פנויות ביום הזה במשך שנבחר. נסו יום אחר או משך קצר יותר.' : 'אין שעות פנויות ביום הזה. נסו יום אחר.'}</p>
                 )}
-                {(!paid || (st.date && !loadingSlots && slots)) && (
+                {(!checkSlots || (st.date && !loadingSlots && slots)) && (
                   <select id="bk-time" className="field time-select" aria-label="שעת התחלה" value={time} onChange={(e) => set({ time: e.target.value })}>
                     <option value="">בחרו שעה</option>
                     {allTimes.map((t) => {
-                      const free = !paid || freeOf(t);
+                      const free = !checkSlots || freeOf(t);
                       return <option key={t} value={t} disabled={!free}>{free ? t : t + ' · תפוס'}</option>;
                     })}
                   </select>

@@ -51,6 +51,7 @@ export default {
       if (url.pathname === '/api/agreement' && request.method === 'POST') return await saveAgreement(request, env);
       if (url.pathname.startsWith('/api/agreement/') && request.method === 'GET') return await getAgreement(url, env);
       if (url.pathname === '/api/pay-claim' && request.method === 'POST') return await payClaim(request, url, env);
+      if (url.pathname === '/api/calendar.ics' && request.method === 'GET') return await calendarFeed(url, env);
       if (url.pathname === '/api/pay-status' && request.method === 'GET') return await payStatus(url, env);
       if (url.pathname === '/api/pay-approve') return await payApprove(request, url, env);
       if (url.pathname.startsWith('/api/')) return json({ error: 'not_found' }, 404);
@@ -88,7 +89,22 @@ const validTime = (s) => /^\d{2}:00$/.test(s || '');
 async function busyRanges(env, date) {
   const dayStart = israelTime(date, '00:00'), dayEnd = new Date(dayStart.getTime() + 24 * 3600 * 1000);
   const ranges = [];
-  // 1) מה שכבר ביומן של יניר
+  // 0) הזמנות שאושרו באתר (יומן ההזמנות של האתר)
+  if (env.BOOKINGS) {
+    const own = await env.BOOKINGS.list({ prefix: 'cal:' + date + ':' });
+    for (const k of own.keys) { const ev = await env.BOOKINGS.get(k.name, 'json'); if (ev) ranges.push([ev.start, ev.end]); }
+  }
+  // 0ב) היומן של יניר ב-iCloud (קישור ליומן ציבורי — סוד ICLOUD_ICS_URL)
+  if (env.ICLOUD_ICS_URL) {
+    try { for (const r of await icloudBusy(env, dayStart.getTime(), dayEnd.getTime())) ranges.push(r); }
+    catch (e) { console.error('icloud', e && e.message); }
+  }
+  if (!googleOn(env)) {
+    const list0 = env.BOOKINGS ? await env.BOOKINGS.list({ prefix: 'hold:' + date + ':' }) : { keys: [] };
+    for (const k of list0.keys) { const h = await env.BOOKINGS.get(k.name, 'json'); if (h) ranges.push([h.start, h.end]); }
+    return ranges;
+  }
+  // 1) מה שכבר ביומן של יניר (Google)
   const token = await googleToken(env);
   const fb = await fetch('https://www.googleapis.com/calendar/v3/freeBusy', {
     method: 'POST',
@@ -111,8 +127,8 @@ const overlaps = (ranges, s, e) => ranges.some(([a, b]) => s < b && a < e);
 
 async function availability(url, env) {
   const deposit = Number(env.DEPOSIT || 0);
-  const base = { configured: configured(env) && deposit > 0, deposit, policy: env.CANCEL_POLICY || '', academy: academyCfg(env), notify: notifyOn(env) };
-  if (!base.configured) return json(base);
+  const base = { configured: configured(env) && deposit > 0, deposit, policy: env.CANCEL_POLICY || '', academy: academyCfg(env), notify: notifyOn(env), calendar: calendarOn(env) };
+  if (!base.configured && !base.calendar) return json(base);
   const date = url.searchParams.get('date');
   const dur = Math.min(8, Math.max(1, parseInt(url.searchParams.get('dur'), 10) || 2));
   if (!validDate(date)) return json(base);
@@ -273,7 +289,9 @@ async function notify(request, url, env) {
 // לא צריך יומן — רק Morning. המקדמה = ACADEMY_DEPOSIT (או מחיר החבילה אם הוא נמוך יותר, למשל שיעור היכרות).
 // השיעורים מתקיימים באולפן → הזמינות לפי אותו יומן של האולפן (יומן גוגל של יניר)
 const LESSON_FROM = 14, LESSON_LAST = 22; // שעת התחלה ראשונה / אחרונה, שיעור של שעה
-const calendarOn = (env) => !!(env.GOOGLE_SA_EMAIL && env.GOOGLE_SA_KEY && env.GOOGLE_CALENDAR_ID && env.BOOKINGS);
+const googleOn = (env) => !!(env.GOOGLE_SA_EMAIL && env.GOOGLE_SA_KEY && env.GOOGLE_CALENDAR_ID);
+// בדיקת שעות פנויות פעילה תמיד כשיש מאגר (הזמנות שאושרו + iCloud / Google אם מחוברים)
+const calendarOn = (env) => !!env.BOOKINGS;
 
 function academyCfg(env) {
   const deposit = Number(env.ACADEMY_DEPOSIT || 0);
@@ -424,6 +442,7 @@ async function saveAgreement(request, env) {
     ip: request.headers.get('cf-connecting-ip') || '', ua: clip(request.headers.get('user-agent'), 300),
   };
   await env.BOOKINGS.put('agreement:' + id, JSON.stringify(record), { expirationTtl: 60 * 60 * 24 * 365 * 3 });
+  if (/מזומן/.test(quote.payMethod)) await addCalEvent(env, id, quote, signer, quote.phone, 'מזומן – ישולם באולפן').catch((e) => console.error('cal', e));
   const origin = new URL(request.url).origin;
   await notifyOwner(env, [
     '✍️ לקוח אישר הצעת מחיר ותקנון',
@@ -624,6 +643,7 @@ async function payApprove(request, url, env) {
     rec.status = 'approved'; rec.approvedAt = Date.now();
     if (rec.quote) rec.quote.payStatus = 'שולם ✓ – התשלום אושר';
     await env.BOOKINGS.put('claim:' + id, JSON.stringify(rec), { expirationTtl: 60 * 60 * 24 * 30 });
+    await addCalEvent(env, id, rec.quote, rec.name, rec.phone, rec.method + ' – שולם ✓').catch((e) => console.error('cal', e));
   }
   if (rec.status === 'approved') {
     return page('<h1>התשלום אושר ✓</h1>' + details + '<p class="m">אם הלקוח עדיין בדף — הוא ממשיך עכשיו להסכם לבד. אם סגר אותו, שלח לו את הקישור:</p>'
@@ -631,4 +651,116 @@ async function payApprove(request, url, env) {
   }
   return page('<h1>אישור תשלום</h1>' + details + `<p class="m">אמצעי תשלום: ${esc(rec.method)}. מאשרים רק אחרי שבדקת שהכסף נכנס.</p>`
     + `<form method="post" action="/api/pay-approve?id=${esc(id)}&amp;t=${esc(t)}"><button type="submit">אישור – התשלום התקבל</button></form>`);
+}
+
+
+/* ---------- יומן ההזמנות של האתר ----------
+   כל הזמנה מאושרת (תשלום שיניר אישר / הסכם במזומן) נשמרת כאירוע: חוסמת את השעה באתר,
+   ומופיעה ביומן באייפון של יניר דרך מינוי ליומן: webcal://www.solproduction.co.il/api/calendar.ics?k=<CAL_FEED_KEY> */
+async function addCalEvent(env, id, q, name, phone, payNote) {
+  if (!env.BOOKINGS || !q || !validDate(q.date) || !/^\d{1,2}:00$/.test(q.time || '')) return;
+  const t = q.time.length === 4 ? '0' + q.time : q.time;
+  const hours = Math.min(8, Math.max(1, parseInt(q.dur, 10) || 2));
+  const start = israelTime(q.date, t).getTime(), end = start + hours * 3600 * 1000;
+  const items = Array.isArray(q.selected) ? q.selected.map((x) => x && x.name).filter(Boolean) : [];
+  const ev = {
+    uid: id + '@solproduction.co.il', start, end,
+    title: `${q.svcLabel || 'הזמנה'} – ${name || ''}`.slice(0, 200),
+    desc: [items.length ? 'פריטים: ' + items.join(' + ') : '', `טלפון: ${phone || ''}`, `תשלום: ${payNote || ''}`, q.notes ? 'הערות: ' + q.notes : ''].filter(Boolean).join('\n').slice(0, 1500),
+  };
+  const ttl = Math.max(3600, Math.floor((end - Date.now()) / 1000) + 60 * 60 * 24 * 60);
+  await env.BOOKINGS.put('cal:' + q.date + ':' + id, JSON.stringify(ev), { expirationTtl: ttl });
+}
+
+const icsEsc = (v) => String(v || '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
+const icsTime = (ms) => new Date(ms).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+const icsFold = (line) => { const out = []; let l = line; while (new TextEncoder().encode(l).length > 74) { let n = 70; while (new TextEncoder().encode(l.slice(0, n)).length > 74) n--; out.push(l.slice(0, n)); l = ' ' + l.slice(n); } out.push(l); return out.join('\r\n'); };
+
+async function calendarFeed(url, env) {
+  if (!env.BOOKINGS || !env.CAL_FEED_KEY || url.searchParams.get('k') !== env.CAL_FEED_KEY) return new Response('not found', { status: 404 });
+  const evs = [];
+  let cursor;
+  do {
+    const page = await env.BOOKINGS.list({ prefix: 'cal:', cursor });
+    for (const k of page.keys) { const ev = await env.BOOKINGS.get(k.name, 'json'); if (ev) evs.push(ev); }
+    cursor = page.list_complete ? undefined : page.cursor;
+  } while (cursor);
+  const now = icsTime(Date.now());
+  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//SOL Production//Bookings//HE', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
+    'X-WR-CALNAME:SOL Production – הזמנות', 'X-WR-TIMEZONE:Asia/Jerusalem', 'REFRESH-INTERVAL;VALUE=DURATION:PT15M', 'X-PUBLISHED-TTL:PT15M'];
+  for (const ev of evs) {
+    lines.push('BEGIN:VEVENT', 'UID:' + ev.uid, 'DTSTAMP:' + now, 'DTSTART:' + icsTime(ev.start), 'DTEND:' + icsTime(ev.end),
+      icsFold('SUMMARY:' + icsEsc(ev.title)), icsFold('DESCRIPTION:' + icsEsc(ev.desc)), 'LOCATION:' + icsEsc('הראשונים 41, אור יהודה'), 'END:VEVENT');
+  }
+  lines.push('END:VCALENDAR');
+  return new Response(lines.join('\r\n') + '\r\n', { headers: { 'content-type': 'text/calendar; charset=utf-8', 'cache-control': 'no-store' } });
+}
+
+/* ---------- היומן של יניר ב-iCloud (יומן ציבורי, קריאה בלבד) ----------
+   ICLOUD_ICS_URL = הקישור מ"יומן ציבורי" באייפון (webcal://p…-caldav.icloud.com/published/…).
+   מחזיר טווחים תפוסים בתוך [from, to). תומך באירועים רגילים, אירועי יום שלם ואירועים חוזרים פשוטים (יומי/שבועי/חודשי/שנתי). */
+let icsCache = { at: 0, text: '' };
+async function icloudBusy(env, from, to) {
+  if (Date.now() - icsCache.at > 5 * 60 * 1000 || !icsCache.text) {
+    const u = String(env.ICLOUD_ICS_URL).replace(/^webcal:/i, 'https:');
+    const r = await fetch(u, { headers: { 'user-agent': 'SOL-Production-site' } });
+    if (!r.ok) throw new Error('icloud fetch ' + r.status);
+    icsCache = { at: Date.now(), text: await r.text() };
+  }
+  const text = icsCache.text.replace(/\r\n?/g, '\n').replace(/\n[ \t]/g, '');
+  const out = [];
+  for (const block of text.split('BEGIN:VEVENT').slice(1)) {
+    const body = block.split('END:VEVENT')[0];
+    const prop = (name) => { const m = body.match(new RegExp('^' + name + '([;:][^\\n]*)$', 'm')); return m ? m[1] : null; };
+    if (/^STATUS:CANCELLED/m.test(body) || /^TRANSP:TRANSPARENT/m.test(body)) continue;
+    const ds = prop('DTSTART'), de = prop('DTEND'), du = prop('DURATION');
+    if (!ds) continue;
+    const start = icsParse(ds);
+    if (start == null) continue;
+    let end = de ? icsParse(de) : null;
+    if (end == null) end = du ? start + icsDur(du.split(':').pop()) : (/VALUE=DATE[;:]/.test(ds) ? start + 86400000 : start + 3600000);
+    const len = end - start;
+    const rrule = prop('RRULE');
+    if (!rrule) { if (start < to && end > from) out.push([start, end]); continue; }
+    // אירוע חוזר — מחשבים מופעים עד סוף היום המבוקש
+    const rr = Object.fromEntries(rrule.slice(1).split(';').map((x) => x.split('=')));
+    const freq = rr.FREQ, step = Math.max(1, parseInt(rr.INTERVAL || '1', 10));
+    const until = rr.UNTIL ? icsParse(':' + rr.UNTIL) : Infinity;
+    const count = rr.COUNT ? parseInt(rr.COUNT, 10) : Infinity;
+    const exdates = [...body.matchAll(/^EXDATE([;:][^\n]*)$/gm)].flatMap((m) => m[1].split(':').pop().split(',').map((v) => icsParse(':' + v)));
+    const byday = rr.BYDAY ? rr.BYDAY.split(',').map((d) => ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'].indexOf(d.slice(-2))) : null;
+    let n = 0;
+    for (let i = 0; i < 2000; i++) {
+      const base = new Date(start);
+      if (freq === 'DAILY') base.setUTCDate(base.getUTCDate() + i * step);
+      else if (freq === 'WEEKLY') base.setUTCDate(base.getUTCDate() + Math.floor(i / (byday ? byday.length : 1)) * 7 * step);
+      else if (freq === 'MONTHLY') base.setUTCMonth(base.getUTCMonth() + i * step);
+      else if (freq === 'YEARLY') base.setUTCFullYear(base.getUTCFullYear() + i * step);
+      else break;
+      let occ = base.getTime();
+      if (freq === 'WEEKLY' && byday) { const want = byday[i % byday.length]; const d = new Date(occ); d.setUTCDate(d.getUTCDate() + ((want - d.getUTCDay() + 7) % 7)); occ = d.getTime(); }
+      if (occ > until || occ >= to || n >= count) break;
+      n++;
+      if (occ + len > from && occ < to && !exdates.includes(occ)) out.push([occ, occ + len]);
+    }
+  }
+  return out;
+}
+function icsParse(v) {
+  const isDate = /VALUE=DATE[;:]/.test(v) && !/T\d/.test(v.split(':').pop());
+  const tzid = (v.match(/TZID=([^;:]+)/) || [])[1];
+  const val = v.split(':').pop().trim();
+  const m = val.match(/^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})(Z)?)?$/);
+  if (!m) return null;
+  const [, Y, M, D, h = '00', mi = '00', , z] = m;
+  if (isDate || !m[4]) return israelTime(`${Y}-${M}-${D}`, '00:00').getTime();
+  if (z) return Date.UTC(+Y, +M - 1, +D, +h, +mi);
+  // שעה מקומית (TZID או בלי אזור) — מתייחסים כשעון ישראל
+  void tzid;
+  return israelTime(`${Y}-${M}-${D}`, `${h}:${mi}`).getTime();
+}
+function icsDur(d) {
+  const m = String(d).match(/P(?:(\d+)W)?(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?/);
+  if (!m) return 3600000;
+  return ((+m[1] || 0) * 7 * 86400 + (+m[2] || 0) * 86400 + (+m[3] || 0) * 3600 + (+m[4] || 0) * 60 + (+m[5] || 0)) * 1000;
 }
